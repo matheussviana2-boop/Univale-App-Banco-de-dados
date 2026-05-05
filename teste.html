@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Teste API Easy Course - UNIVALE URBANOS</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',sans-serif;background:#0d1117;color:#c9d1d9;padding:20px;}
+h2{color:#00a896;margin-bottom:6px;}
+p{color:#7aada7;font-size:12px;margin-bottom:16px;}
+button{padding:10px 18px;background:#00a896;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;margin:4px;transition:opacity 0.2s;}
+button:hover{opacity:0.8;}
+button.sec{background:#1f6feb;}
+input{padding:8px;width:200px;border-radius:6px;border:1px solid #00a896;background:#161b22;color:#c9d1d9;font-size:13px;}
+label{font-size:11px;color:#7aada7;display:block;margin-bottom:4px;}
+.status{padding:10px 14px;border-radius:8px;margin:12px 0;font-size:13px;background:#161b22;border-left:4px solid #00a896;}
+.status.erro{border-left-color:#e63329;}
+.linhas{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px;margin-top:16px;}
+.linha-card{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:14px;}
+.linha-num{font-size:18px;font-weight:800;color:#00a896;margin-bottom:8px;}
+.viagem{background:#0d1117;border-radius:8px;padding:10px;margin-top:8px;font-size:12px;}
+.viagem-sentido{font-weight:700;color:#58a6ff;margin-bottom:4px;}
+.viagem-info{color:#8b949e;line-height:1.6;}
+.viagem-kml{color:#3fb950;word-break:break-all;font-size:11px;margin-top:4px;}
+.tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;margin-right:4px;}
+.tag.ida{background:rgba(0,168,150,0.2);color:#00a896;}
+.tag.volta{background:rgba(240,120,32,0.2);color:#f07820;}
+.tag.outro{background:rgba(88,166,255,0.2);color:#58a6ff;}
+pre{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:14px;overflow:auto;max-height:400px;font-size:11px;white-space:pre-wrap;margin-top:12px;}
+.raw-toggle{background:#21262d;color:#8b949e;font-size:11px;padding:6px 12px;border:1px solid #30363d;border-radius:6px;cursor:pointer;margin-top:8px;}
+</style>
+</head>
+<body>
+<h2>🚌 Rotas UNIVALE URBANOS — Easy Course</h2>
+<p>Busca todas as rotas do cliente UNIVALE URBANOS e agrupa por linha (ida/volta)</p>
+
+<button onclick="buscarRotas()">🔄 Buscar Rotas UNIVALE URBANOS</button>
+
+<div style="margin-top:16px;">
+  <label>ID da Rota (para detalhe de paradas):</label>
+  <input id="idRota" placeholder="Ex: 152337">
+  <button class="sec" onclick="buscarParadas()">📍 Ver Paradas</button>
+  <button class="sec" onclick="buscarPontoAPonto()">🗺 Ponto a Ponto</button>
+</div>
+
+<div class="status" id="status">Clique em "Buscar Rotas" para começar.</div>
+
+<div class="linhas" id="linhas"></div>
+<pre id="raw" style="display:none"></pre>
+<button class="raw-toggle" id="rawBtn" style="display:none" onclick="toggleRaw()">Ver JSON bruto</button>
+
+<script>
+var BASE = "https://testeeasycourse-taarlhxvla-uc.a.run.app";
+var rawVisible = false;
+var lastJson = null;
+
+function toggleRaw(){
+  rawVisible = !rawVisible;
+  document.getElementById("raw").style.display = rawVisible ? "block" : "none";
+  document.getElementById("rawBtn").textContent = rawVisible ? "Ocultar JSON" : "Ver JSON bruto";
+}
+
+function setStatus(msg, erro){
+  var el = document.getElementById("status");
+  el.textContent = msg;
+  el.className = "status" + (erro ? " erro" : "");
+}
+
+function tagSentido(s){
+  var sl = s.toLowerCase();
+  if(sl.includes("ipatinga") || sl.includes("timóteo") || sl.includes("coronel")) {
+    return '<span class="tag ida">IDA</span>';
+  }
+  return '<span class="tag outro">→</span>';
+}
+
+async function buscarRotas(){
+  setStatus("⏳ Buscando rotas do UNIVALE URBANOS...");
+  document.getElementById("linhas").innerHTML = "";
+  document.getElementById("raw").style.display = "none";
+  document.getElementById("rawBtn").style.display = "none";
+
+  try{
+    var resp = await fetch(BASE);
+    var json = await resp.json();
+    lastJson = json;
+
+    if(json.error){
+      setStatus("❌ Erro: " + json.error, true);
+      return;
+    }
+
+    setStatus("✅ " + json.total_rotas + " rotas encontradas, agrupadas em " + json.total_linhas + " linhas.");
+
+    var html = "";
+    json.linhas.forEach(function(l){
+      html += '<div class="linha-card">';
+      html += '<div class="linha-num">Linha ' + l.numero + '</div>';
+      l.viagens.forEach(function(v){
+        var isIda = v.viagens && v.viagens[0] ? true : true;
+        html += '<div class="viagem">';
+        html += '<div class="viagem-sentido">→ ' + v.sentido + '</div>';
+        html += '<div class="viagem-info">';
+        html += '🕐 ' + v.inicio + ' → ' + v.final + ' &nbsp;|&nbsp; ⏱ ' + v.duracao + '<br>';
+        html += '🆔 id_rota: <strong style="color:#e3b341;">' + v.id_rota + '</strong><br>';
+        if(v.kml){
+          html += '<div class="viagem-kml">📎 KML: <a href="' + v.kml + '" target="_blank" style="color:#3fb950;">' + v.kml + '</a></div>';
+        }
+        html += '</div></div>';
+      });
+      html += '</div>';
+    });
+
+    document.getElementById("linhas").innerHTML = html;
+    document.getElementById("raw").textContent = JSON.stringify(json, null, 2);
+    document.getElementById("rawBtn").style.display = "inline-block";
+
+  }catch(e){
+    setStatus("❌ Erro: " + e.message, true);
+  }
+}
+
+async function buscarParadas(){
+  var id = document.getElementById("idRota").value.trim();
+  if(!id){ setStatus("⚠️ Informe o ID da rota", true); return; }
+  setStatus("⏳ Buscando paradas da rota " + id + "...");
+  try{
+    var resp = await fetch(BASE + "?id_rota=" + id);
+    var json = await resp.json();
+    document.getElementById("raw").textContent = JSON.stringify(json, null, 2);
+    document.getElementById("raw").style.display = "block";
+    document.getElementById("rawBtn").style.display = "inline-block";
+    var total = json.data && json.data[0] ? json.data[0].total_registros : "?";
+    setStatus("✅ Paradas carregadas — " + total + " registros.");
+  }catch(e){
+    setStatus("❌ Erro: " + e.message, true);
+  }
+}
+
+async function buscarPontoAPonto(){
+  var id = document.getElementById("idRota").value.trim();
+  if(!id){ setStatus("⚠️ Informe o ID da rota", true); return; }
+  setStatus("⏳ Buscando ponto a ponto da rota " + id + "...");
+  try{
+    var resp = await fetch(BASE + "?funcao=get-detalhado-ponto&id_rota=" + id);
+    var json = await resp.json();
+    document.getElementById("raw").textContent = JSON.stringify(json, null, 2);
+    document.getElementById("raw").style.display = "block";
+    document.getElementById("rawBtn").style.display = "inline-block";
+    setStatus("✅ Ponto a ponto carregado.");
+  }catch(e){
+    setStatus("❌ Erro: " + e.message, true);
+  }
+}
+</script>
+</body>
+</html>
