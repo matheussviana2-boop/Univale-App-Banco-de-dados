@@ -1,0 +1,1493 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Univale - Painel Administrativo</title>
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, doc, addDoc, setDoc, updateDoc, deleteDoc, getDocs, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyB5P2MIeb2i_eg4OrsDfBfNbIrHFecI6BM",
+  authDomain: "app---univale.firebaseapp.com",
+  projectId: "app---univale",
+  storageBucket: "app---univale.firebasestorage.app",
+  messagingSenderId: "355657879036",
+  appId: "1:355657879036:web:477c1e03cf0c3b5095b679",
+  measurementId: "G-2GVE5MHF29"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+const storage = getStorage(app);
+
+window._fb = { db, storage, collection, doc, addDoc, setDoc, updateDoc, deleteDoc, getDocs, onSnapshot, serverTimestamp, ref, uploadBytes, getDownloadURL, deleteObject };
+window.dispatchEvent(new Event("firebaseReady"));
+</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --teal:#00a896;--teal-d:#007a6e;--teal-l:rgba(0,168,150,0.10);
+  --navy:#1a2e44;--bg:#f4f9f8;--bg2:#eaf5f3;
+  --red:#e63329;--border:#c8e6e2;--border2:#a0d4ce;
+  --text:#1a2e44;--text2:#3a6b63;--text3:#7aada7;
+  --green:#00c060;--yellow:#f5a623;--orange:#f07820;
+  --white:#ffffff;--sidebar:260px;--topbar:58px;
+}
+html,body{height:100%;font-family:"Exo 2",sans-serif;background:var(--bg);color:var(--text);overflow:hidden;}
+.shell{display:flex;height:100vh;}
+.sidebar{width:var(--sidebar);background:var(--white);border-right:1.5px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;box-shadow:2px 0 16px rgba(0,0,0,0.06);z-index:100;}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.sidebar-logo{padding:16px 20px 14px;border-bottom:1.5px solid var(--border);display:flex;align-items:center;gap:10px;}
+.sidebar-logo img{height:38px;width:auto;object-fit:contain;}
+.sidebar-logo-label{font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--teal);background:rgba(0,168,150,0.12);border:1px solid rgba(0,168,150,0.25);border-radius:6px;padding:2px 7px;text-transform:uppercase;white-space:nowrap;}
+.sidebar-section{padding:10px 12px 4px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text3);}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 16px;margin:2px 8px;border-radius:10px;cursor:pointer;transition:all 0.18s;font-size:13px;font-weight:600;color:var(--text2);border:1.5px solid transparent;}
+.nav-item:hover{background:var(--bg2);color:var(--teal);}
+.nav-item.active{background:var(--teal-l);border-color:rgba(0,168,150,0.3);color:var(--teal);}
+.nav-item svg{flex-shrink:0;width:18px;height:18px;}
+.nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:9px;font-weight:800;border-radius:10px;padding:2px 6px;min-width:18px;text-align:center;}
+.nav-badge.green{background:var(--green);}
+.nav-badge.orange{background:var(--orange);}
+.sidebar-footer{margin-top:auto;padding:14px 16px;border-top:1.5px solid var(--border);font-size:11px;color:var(--text3);display:flex;align-items:center;gap:8px;}
+.online-dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;}
+.topbar{height:var(--topbar);background:var(--white);border-bottom:1.5px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;box-shadow:0 2px 12px rgba(0,0,0,0.06);}
+.topbar-title{font-size:16px;font-weight:800;color:var(--text);}
+.topbar-sub{font-size:11px;color:var(--text3);margin-top:1px;}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+.topbar-clock{font-family:"Space Mono",monospace;font-size:13px;font-weight:700;color:var(--teal);background:var(--teal-l);border:1px solid rgba(0,168,150,0.25);padding:5px 12px;border-radius:8px;}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:9px;font-family:"Exo 2",sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.18s;border:none;}
+.btn-primary{background:linear-gradient(135deg,var(--teal-d),var(--teal));color:#fff;box-shadow:0 3px 12px rgba(0,168,150,0.28);}
+.btn-primary:hover{opacity:0.9;transform:translateY(-1px);}
+.btn-secondary{background:var(--white);border:1.5px solid var(--border);color:var(--text2);}
+.btn-secondary:hover{border-color:var(--teal);color:var(--teal);}
+.btn-danger{background:rgba(230,51,41,0.1);border:1.5px solid rgba(230,51,41,0.3);color:var(--red);}
+.btn-danger:hover{background:var(--red);color:#fff;}
+.btn-success{background:rgba(0,192,96,0.1);border:1.5px solid rgba(0,192,96,0.3);color:var(--green);}
+.btn-success:hover{background:var(--green);color:#fff;}
+.btn-sm{padding:6px 12px;font-size:11px;}
+.btn-icon{padding:7px;border-radius:8px;background:var(--bg);border:1.5px solid var(--border);color:var(--text3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;}
+.btn-icon:hover{border-color:var(--teal);color:var(--teal);}
+.btn-icon.danger:hover{border-color:var(--red);color:var(--red);}
+.page-content{flex:1;overflow-y:auto;padding:24px;}
+.page{display:none;}
+.page.active{display:block;animation:fadeIn 0.2s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.spinning{animation:spin 1s linear infinite;}
+.sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
+.sec-title{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text3);}
+.section-card{background:var(--white);border:1.5px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 2px 8px rgba(0,168,150,0.05);margin-bottom:20px;}
+.data-table{width:100%;border-collapse:collapse;}
+.data-table th{padding:11px 16px;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);background:var(--bg);border-bottom:1.5px solid var(--border);text-align:left;}
+.data-table td{padding:12px 16px;font-size:13px;color:var(--text);border-bottom:1px solid var(--border);vertical-align:middle;}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr:hover td{background:var(--bg);}
+.data-table tr.row-pendente td{background:rgba(240,120,32,0.04);}
+.tag{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:0.5px;}
+.tag.teal{background:rgba(0,168,150,0.12);color:var(--teal);}
+.tag.red{background:rgba(230,51,41,0.12);color:var(--red);}
+.tag.yellow{background:rgba(245,166,35,0.12);color:var(--yellow);}
+.tag.green{background:rgba(0,192,96,0.12);color:var(--green);}
+.tag.gray{background:var(--bg);color:var(--text3);border:1px solid var(--border);}
+.tag.orange{background:rgba(240,120,32,0.12);color:var(--orange);}
+.action-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.form-group{display:flex;flex-direction:column;gap:6px;}
+.form-group.full{grid-column:1/-1;}
+.form-label{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);}
+.form-input,.form-select,.form-textarea{background:var(--bg);border:1.5px solid var(--border);color:var(--text);font-family:"Exo 2",sans-serif;font-size:13px;font-weight:500;padding:10px 13px;border-radius:9px;outline:none;transition:border-color 0.2s,box-shadow 0.2s;width:100%;}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(0,168,150,0.12);}
+.form-input::placeholder,.form-textarea::placeholder{color:var(--text3);}
+.form-textarea{resize:vertical;min-height:90px;line-height:1.5;}
+.form-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237aada7' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;}
+.upload-zone{border:2px dashed var(--border2);border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg);}
+.upload-zone:hover{border-color:var(--teal);background:var(--teal-l);}
+.upload-zone.has-file{border-color:var(--green);background:rgba(0,192,96,0.06);}
+.upload-icon{width:32px;height:32px;margin:0 auto 6px;border-radius:10px;background:rgba(0,168,150,0.12);display:flex;align-items:center;justify-content:center;}
+.upload-label{font-size:12px;font-weight:700;color:var(--text2);}
+.upload-hint{font-size:10px;color:var(--text3);margin-top:2px;}
+.day-pills{display:flex;gap:6px;flex-wrap:wrap;}
+.day-pill{padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;border:1.5px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;font-family:"Exo 2",sans-serif;transition:all 0.15s;}
+.day-pill.active{background:var(--teal);color:#fff;border-color:var(--teal);}
+
+/* HORÁRIOS EM LISTA — estilo compacto */
+.time-list-wrap{display:flex;flex-direction:column;gap:0;background:var(--white);border:1.5px solid var(--border);border-radius:9px;overflow:visible;min-height:44px;}
+.time-list-item{display:flex;align-items:center;gap:10px;padding:7px 10px;border-bottom:1px solid var(--border);transition:background 0.12s;overflow:visible;position:relative;}
+.time-list-item:last-child{border-bottom:none;}
+.time-list-item:hover{background:var(--bg);}
+.time-list-hora{font-family:"Space Mono",monospace;font-size:12px;font-weight:700;color:var(--teal);min-width:38px;flex-shrink:0;}
+.time-list-obs{flex:1;font-size:11px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.time-list-obs.has-text{color:var(--text2);}
+.time-list-actions{display:flex;gap:3px;flex-shrink:0;}
+.obs-btn{width:28px;height:28px;border-radius:6px;border:1px solid transparent;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all 0.15s;color:var(--text3);position:relative;}
+.obs-btn:hover{border-color:var(--border);background:var(--bg);color:var(--teal);}
+.obs-btn.has-obs{color:var(--teal);}
+.obs-tooltip{position:absolute;bottom:110%;left:50%;transform:translateX(-50%);background:#1a2e44;color:#fff;font-size:9px;padding:2px 6px;border-radius:4px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity 0.15s;font-family:"Exo 2",sans-serif;}
+.obs-btn:hover .obs-tooltip{opacity:1;}
+.time-remove-btn{width:28px;height:28px;border-radius:6px;border:none;background:transparent;cursor:pointer;color:var(--text3);display:flex;align-items:center;justify-content:center;font-size:15px;line-height:1;transition:color 0.15s;}
+.time-remove-btn:hover{color:var(--red);}
+.kml-btn{width:28px;height:28px;border-radius:6px;border:1px solid transparent;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;color:var(--text3);position:relative;}
+.kml-btn:hover{border-color:var(--border);background:var(--bg);}
+.kml-btn.has-kml-padrao{color:#1a2e44;}
+.kml-btn.has-kml-especial{color:#2563eb;}
+.kml-btn .obs-tooltip{min-width:120px;text-align:center;}.kml-btn:hover .obs-tooltip{opacity:1;}
+.time-add-row{display:flex;gap:8px;align-items:center;margin-top:8px;}
+.time-empty{font-size:11px;color:var(--text3);padding:10px 12px;}
+
+/* OBS MODAL */
+.obs-modal-overlay{position:fixed;inset:0;z-index:2000;background:rgba(10,20,38,0.55);display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn 0.18s ease;}
+.obs-modal-overlay.hidden{display:none;}
+.obs-modal{background:var(--white);border-radius:14px;box-shadow:0 16px 48px rgba(0,0,0,0.18);width:100%;max-width:400px;padding:20px;}
+.obs-modal-title{font-size:13px;font-weight:800;color:var(--text);margin-bottom:4px;}
+.obs-modal-sub{font-size:11px;color:var(--text3);margin-bottom:14px;}
+
+.sentido-tabs{display:flex;gap:0;border:1.5px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px;}
+.sentido-tab-btn{flex:1;padding:10px 16px;font-family:"Exo 2",sans-serif;font-size:12px;font-weight:700;border:none;background:transparent;color:var(--text3);cursor:pointer;transition:all 0.18s;display:flex;align-items:center;justify-content:center;gap:6px;}
+.sentido-tab-btn:first-child{border-right:1.5px solid var(--border);}
+.sentido-tab-btn.active{background:var(--teal-l);color:var(--teal);}
+.sentido-tab-btn .dir-arrow{font-size:14px;}
+.sentido-panel{display:none;}
+.sentido-panel.active{display:block;}
+.sentido-block{background:var(--bg);border:1.5px solid var(--border);border-radius:12px;padding:16px;margin-bottom:0;}
+.sentido-block-title{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--teal);margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+.modal-overlay{position:fixed;inset:0;z-index:1000;background:rgba(10,20,38,0.55);display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn 0.18s ease;}
+.modal-overlay.hidden{display:none;}
+.modal{background:var(--white);border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,0.18);width:100%;max-width:620px;max-height:92vh;display:flex;flex-direction:column;animation:modalIn 0.25s cubic-bezier(.4,0,.2,1);}
+.modal.lg{max-width:860px;}
+.modal.map-modal{max-width:900px;height:80vh;}
+@keyframes modalIn{from{opacity:0;transform:scale(0.96) translateY(12px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.modal-header{padding:20px 22px 0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.modal-title{font-size:15px;font-weight:800;color:var(--text);}
+.modal-close{background:var(--bg);border:1.5px solid var(--border);border-radius:8px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text3);font-size:18px;line-height:1;transition:all 0.15s;}
+.modal-close:hover{border-color:var(--red);color:var(--red);}
+.modal-body{padding:20px 22px;overflow-y:auto;flex:1;}
+.modal-footer{padding:14px 22px;border-top:1.5px solid var(--border);display:flex;justify-content:flex-end;gap:10px;flex-shrink:0;}
+.msg-card{background:var(--white);border:1.5px solid var(--border);border-radius:14px;padding:16px;margin-bottom:12px;cursor:pointer;transition:all 0.18s;box-shadow:0 2px 8px rgba(0,0,0,0.04);}
+.msg-card:hover{border-color:var(--teal);box-shadow:0 4px 18px rgba(0,168,150,0.12);}
+.msg-card.unread{border-left:4px solid var(--teal);}
+.msg-card.reclamacao.unread{border-left-color:var(--red);}
+.msg-card.elogio.unread{border-left-color:var(--green);}
+.msg-card.sugestao.unread{border-left-color:var(--yellow);}
+.msg-head{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.msg-tipo{font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:2px 8px;border-radius:6px;}
+.msg-tipo.reclamacao{background:rgba(230,51,41,0.12);color:var(--red);}
+.msg-tipo.elogio{background:rgba(0,192,96,0.12);color:var(--green);}
+.msg-tipo.sugestao{background:rgba(245,166,35,0.12);color:var(--yellow);}
+.msg-date{font-size:10px;color:var(--text3);margin-left:auto;}
+.msg-body{font-size:12px;color:var(--text2);line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.unread-dot{width:7px;height:7px;border-radius:50%;background:var(--teal);flex-shrink:0;}
+.filter-bar{display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap;}
+.filter-btn{padding:6px 14px;border-radius:20px;font-size:11px;font-weight:700;border:1.5px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;font-family:"Exo 2",sans-serif;transition:all 0.15s;}
+.filter-btn.active{background:var(--teal);color:#fff;border-color:var(--teal);}
+.search-bar{flex:1;min-width:200px;display:flex;align-items:center;gap:8px;background:var(--white);border:1.5px solid var(--border);border-radius:10px;padding:0 12px;transition:border-color 0.2s;}
+.search-bar:focus-within{border-color:var(--teal);}
+.search-input{flex:1;background:none;border:none;outline:none;color:var(--text);font-family:"Exo 2",sans-serif;font-size:13px;padding:9px 0;}
+.search-input::placeholder{color:var(--text3);}
+.notif-type-row{display:flex;gap:10px;margin-bottom:16px;}
+.notif-type{flex:1;padding:14px 10px;border-radius:12px;border:1.5px solid var(--border);cursor:pointer;text-align:center;transition:all 0.18s;background:var(--bg);}
+.notif-type.sel{background:var(--teal-l);border-color:rgba(0,168,150,0.4);}
+.notif-type-icon{font-size:22px;margin-bottom:5px;}
+.notif-type-label{font-size:11px;font-weight:700;color:var(--text2);}
+.notif-type.sel .notif-type-label{color:var(--teal);}
+.schedule-toggle{display:flex;gap:8px;margin-bottom:12px;}
+.sched-opt{flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--border);cursor:pointer;text-align:center;font-size:12px;font-weight:700;color:var(--text3);background:var(--bg);transition:all 0.15s;font-family:"Exo 2",sans-serif;}
+.sched-opt.sel{background:var(--teal-l);border-color:var(--teal);color:var(--teal);}
+.confirm-overlay{position:fixed;inset:0;z-index:2000;background:rgba(10,20,38,0.65);display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn 0.15s ease;}
+.confirm-overlay.hidden{display:none;}
+.confirm-box{background:var(--white);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,0.22);width:100%;max-width:420px;padding:28px 24px;text-align:center;animation:modalIn 0.2s cubic-bezier(.4,0,.2,1);}
+.confirm-icon{width:56px;height:56px;border-radius:50%;background:rgba(230,51,41,0.10);border:2px solid rgba(230,51,41,0.2);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;}
+.confirm-title{font-size:16px;font-weight:800;color:var(--text);margin-bottom:8px;}
+.confirm-desc{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:22px;}
+.confirm-actions{display:flex;gap:10px;justify-content:center;}
+.toast-wrap{position:fixed;bottom:28px;right:28px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none;}
+.toast{background:var(--white);border:1.5px solid var(--border);border-radius:12px;padding:12px 18px;font-size:12px;font-weight:700;color:var(--text);box-shadow:0 6px 24px rgba(0,0,0,0.12);opacity:0;transform:translateY(12px);transition:all 0.3s;pointer-events:none;display:flex;align-items:center;gap:8px;min-width:220px;}
+.toast.show{opacity:1;transform:translateY(0);}
+.toast.success{border-left:4px solid var(--green);}
+.toast.error{border-left:4px solid var(--red);}
+.toast.info{border-left:4px solid var(--teal);}
+::-webkit-scrollbar{width:5px;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+.empty{text-align:center;padding:40px 20px;color:var(--text3);}
+.empty-icon{font-size:36px;margin-bottom:10px;}
+.empty-label{font-size:13px;font-weight:600;}
+.viagem-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:700;}
+.viagem-badge.ida{background:rgba(0,168,150,0.1);color:var(--teal);}
+.viagem-badge.volta{background:rgba(240,120,32,0.1);color:var(--orange);}
+.info-box{background:rgba(0,168,150,0.06);border:1.5px solid rgba(0,168,150,0.2);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:16px;}
+.info-box strong{color:var(--teal);}
+.sync-result-box{background:rgba(0,168,150,0.06);border:1.5px solid rgba(0,168,150,0.25);border-radius:12px;padding:16px 18px;margin-bottom:16px;display:none;}
+.sync-result-box.show{display:block;}
+@media(max-width:900px){.form-grid{grid-column:1fr;}}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <img src="data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/wAARCAB4AMwDASIAAhEBAxEB/8QAHAABAAIDAQEBAAAAAAAAAAAAAAQHAQUGCAID/8QAORAAAQMDAgQEBQEFCQEAAAAAAQACAwQFEQYhBxIxURMzQXIUImFxgZEVMlOhwQgWIzRCUqKx4fD/xAAbAQEAAgMBAQAAAAAAAAAAAAAAAQQCAwUGB//EAC0RAAICAgEDAwMCBwEAAAAAAAABAgMEEQUSIUEiMVEGE2EUcRUygZGxwdHh/9oADAMBAAIRAxEAPwD1/Reafapih0Xmn2qYjIQREQkIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgIdF5p9qmKHReafapiMhBERCQiIgCIiAIiIAiIgCIiAIhWPygMovkuDQSTgDqSq81Bxe0zabwbcTPUljuWSSIZa0rOFcp9ooq5ObRixUrpKKfyWKih2m4Ut0oIq6ilbLBK3ma4FS/ysda7FiM1NdUfYyieqKDIIsORAZREQEOi80+1TFDovNPtUxGQgiIhIREQBERAEREAREQBERACvkn1X0VGuFTHRUM9ZK7EcMbnvPYAZKJbMZSUU2/BW3HrWjrHZ/2PQS8tdVtIc4HeNnf8rzc9xc8uJJJOSTv1W31lfanUWoaq6VLiTI/5G+jG+gWmXoMalVQXyfG+c5OWflSlv0rsi5f7PWtPgqs6YuMuIJjzUrnH913q38q/gc7rxBTyyQTsmieWSMcHNcDuCOi9ScH9axarsjYqh7RcaYBkzc7u7OCo52O0+uJ636T5n7kP0lr7r2/4d4CsrA3Q9FzT3J+VdUw0dLJU1DwyKNpc4nsoGnb5Q32jNTQyFzGu5SCMELkuNVzdT2WG3xuwah2XY9WhcvweurqTUBoXPIiqW7An/UFdrxOqh2eTyuV9Q/Z5WOHr0+f3ZdI6rKwPusqkeqIdF5p9qmKHReafapiMhBEKxlCTKLGUB2QGUWN85T8oDKL5OcrPqgMosIgMosEplBsFRLzRMuNpq6CXZlTC6J32cMKWSh6eilNp7MZRU4uL9meM9W2C4advE1uuED2PY48riPle3uD9Vp17G1jpW0aptxpLlA0nfw5QPnYe4K82cQuHt40nVOe6N1TQuJ8OdjcgDs7sV2sbLjYtP3PlHN/Tt2DJ2V+qH+DjVttI3+t01fILpQvIfGfnb6Pb6grU5BKfkK3JKS0/J52qydU1OL00eytH6ioNS2WG50Mgc14+dmd2O9WlbleSeGeutKzSF5bI1zpKKUgVEXcdx9V6msN2or1bYbhQTNmhlaCCD0+n3XDycd1S34PrnBc1DqqtuvJYfIwvOAO+fUL0uCjOEUu5jxeXZbdkWTl6IvS/p7irr6Ok/zNVFD73gLFJX0dWD8LUxTY9GPBVUaQsv99rhXXK71M5jY/DGsdjBPp9sYXxaKF1k4nxW22TSuh5wHhzzsW5IK2PEgm477ruVI/UOQ3C37S+1N6T33/fRcbjhuey4fR/Eah1NqqusVJba2M0nNmeRuGOwcbLr7rUNpLbUVLj8sUTnn8DKrrglT889yr3N+Z7g0n85P81VjU5Qc9+x6CzlKsfJjiuvqlNPT3rp15/JZU88MEfPPIyNvdxwF9RSMljD43tc09CDkFcpxZp3T6PqCwEmNzX/jOD/IlQdIXqK38NRXTPLvAY4YzuTnAAWcaOqtSXzop28qqcyVE1pKPVs7VtVTOnMDZ4jKOrA4ZH4X6SvbGwve4NaOpJVd8JrZNUz1Wo67LpZ3ER57Z3P/AN2XRcQaq0R2R1Nd6uanjlOB4J+d30GxSVOrPtruMfkpWYTyZrp3vW348G1F5tZk8IXCm5/9viDKnNcHNDg4EH1BVC30aVFvcbUy5sqgQWOlHyHf17K0+F8tRNo+mfUOc9xzyl3bOy2XY0YQ60yjxXOzzMl484r23tPZr+Ll4q7bZ4I6KofBLNJjnY7DgAugsNP8XpakhuYFWZYG+L4o5ubI9c9VwfFsmt1LarY04LsZx6cxwrMh5KWgaDs2OMZ+gASxKNMEvcnCsd3JZEpP0xSWvH5KV4n8I6ONklz09NHTnJc6kkf8p9p/oqVqaaemkcyaJzC0kbhXVWXmhvmpZ6jUNVO2hjJEUUYO++w2/VRX6ftGotRw0Nrpav8AZ8nmueCC3uQV06ZSrjqxnhOSrpzLuvDgkm9a8v8AOvgpkbBdfw411c9HV/8AhuM1BIR41OTsfqOxXTav4L3u3yOmskrbjTjJDD8sjfp9VXFytFztspjr6Cop3D+JGQs1Oq6OtlaWLncXap6cWvJ6fn1rYb1oqurqKrY7NO5picfna4jYEKjqtxdiGPeWd4jjA6uJOAuIpzUCTlgMnMcbM6lXDwY0Dc6y7QagvkUsdNAeenjlGHPd6HHYLVGMMWEu/uXr7cr6gyqouOte5eNkg+FtNJT/AMOFrf0CmrDRjYLK4je3s+sQj0xUV4IdF5p9qlnphRKLzT7VMRmSOQ4lacqb/a420bm+PC4ua0nHN9FydE7iRR0bbfDSODGDka48hwPvlW3gdkwFYryXCPS0mjh5nBV5F7yITlCT7PT9zhNAaRrLdXS3m8SNkrpejc55c9cnuui1hBV1WnKynoWeJPJEWtbkDOfutzgdkwtcrpSmpsuUcZTj4zx6+ye9/PfyclwzstXZbA6KthEVRLIXubkHAAA7Z6KwsDsiy/US3J/Jq/g9HRTDb1X3X/ppNaU1ZV6Yraagj8SeWMta3IGc9Rutbwys1XZbEYq2Lw6iSQuc3mBwPTpsutwEwOywVrUHDwWJcfXLKWU36ktI1upKH9pWOroh+9LGWt+/oqot+ldW1MMVinp/h7e2bne4kED67dVdKYHZbKcmdUXFFTkeFpz7Y2TbWu3byvgiWyjht9BDRwNDWRMDRhcXxO0/d7pX0NfbYWVAp+unjlGHPd6HHYLVGMMWEu/uXr7cr6gyqouOte5eNkg+FtNJT/AMOFrf0CmrDRjYLK4je3s+sQj0xUV4IdF5p9qlnphRKLzT7VMRmSOQ4lacqb/a420bm+PC4ua0nHN9FydE7iRR0bbfDSODGDka48hwPvlW3gdkwFYryXCPS0mjh5nBV5F7yITlCT7PT9zhNAaRrLdXS3m8SNkrpejc55c9cnuui1hBV1WnKynoWeJPJEWtbkDOfutzgdkwtcrpSmpsuUcZTj4zx6+ye9/PfyclwzstXZbA6KthEVRLIXubkHAAA7Z6KwsDsiy/US3J/Jq/g9HRTDb1X3X/ppNaU1ZV6Yraagj8SeWMta3IGc9Rutbwys1XZbEYq2Lw6iSQuc3mBwPTpsutwEwOywVrUHDwWJcfXLKWU36ktI1upKH9pWOroh+9LGWt+/oqot+ldW1MMVinp/h7e2bne4kED67dVdKYHZbKcmdUXFFTkeFpz7Y2TbWu3byvgiWyjht9BDRwNDWRMDRhcXxO0/d7pX0NfbYWVAp+unjlGHPd6HHYLVGMMWEu/uXr7cr6gyqouOte5eNkg+FtNJT/AMOFrf0CmrDRjYLK4je3s+sQj0xUV4IdF5p9qlnphRKLzT7VMRkSOQ4lacqb/a420bm+PC4ua0nHN9FydE7iRR0bbfDSODGDka48hwPvlW3gdkwFYryXCPS0mjh5nBV5F7yITlCT7PT9zhNAaRrLdXS3m8SNkrpejc55c9cnuui1hBV1WnKynoWeJPJEWtbkDOfutzgdkwtcrpSmpsuUcZTj4zx6+ye9/PfyclwzstXZbA6KthEVRLIXubkHAAA7Z6KwsDsiy/US3J/Jq/g9HRTDb1X3X/ppNaU1ZV6Yraagj8SeWMta3IGc9Rutbwys1XZbEYq2Lw6iSQuc3mBwPTpsutwEwOywVrUHDwWJcfXLKWU36ktI1upKH9pWOroh+9LGWt+/oqot+ldW1MMVinp/h7e2bne4kED67dVdKYHZbKcmdUXFFTkeFpz7Y2TbWu3byvgiWyjht9BDRwNDWRMDRhcXxO0/d7pX0NfbYWVAp+unjlGHPd6HHYLVGMMWEu/uXr7cr6gyqouOte5eNkg+FtNJT/AMOFrf0CmrDRjYLK4je3s+sQj0xUV4IdF5p9qlnphRKLzT7VMRmSOQ4lacqb/a420bm+PC4ua0nHN9FydE7iRR0bbfDSODGDka48hwPvlW3gdkwFYryXCPS0mjh5nBV5F7yITlCT7PT9zhNAaRrLdXS3m8SNkrpejc55c9cnuui1hBV1WnKynoWeJPJEWtbkDOfutzgdkwtcrpSmpsuUcZTj4zx6+ye9/PfyclwzstXZbA6KthEVRLIXubkHAAA7Z6KwsDsiy/US3J/Jq/g9HRTDb1X3X/ppNaU1ZV6Yraagj8SeWMta3IGc9Rutbwys1XZbEYq2Lw6iSQuc3mBwPTpsutwEwOywVrUHDwWJcfXLKWU36ktI1upKH9pWOroh+9LGWt+/oqot+ldW1MMVinp/h7e2bne4kED67dVdKYHZbKcmdUXFFTkeFpz7Y2TbWu3byvgiWyjht9BDRwNDWRMDRhcXxO0/d7pX0NfbYWVAp+unjlGHPd6HHYLVGMMWEu/uXr7cr6gyqouOte5eNkg+FtNJT/AMOFrf0CmrDRjYLK4je3s+sQj0xUV4I" alt="Univale">
+    <span class="sidebar-logo-label">Admin</span>
+  </div>
+  <div class="sidebar-section" style="margin-top:10px;">Menu</div>
+  <nav style="flex:1;">
+    <div class="nav-item" onclick="navTo('linhas',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 17H7a4 4 0 0 1-4-4V9a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v4a4 4 0 0 1-4 4z"/><circle cx="7.5" cy="17" r="2.5"/><circle cx="16.5" cy="17" r="2.5"/></svg>
+      Cadastro de Linhas
+    </div>
+    <div class="nav-item" onclick="navTo('alertas',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      Alertas e Not&#237;cias
+      <span class="nav-badge green" id="badge-alertas" style="display:none;">0</span>
+    </div>
+    <div class="nav-item" onclick="navTo('faleconosco',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Fale Conosco
+      <span class="nav-badge" id="badge-msgs" style="display:none;">0</span>
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="online-dot"></div>
+    <span>Sistema online &middot; v2.0</span>
+  </div>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title" id="topbar-title">Cadastro de Linhas e Hor&#225;rios</div>
+      <div class="topbar-sub" id="topbar-sub">Gerencie as linhas, sentidos e hor&#225;rios do aplicativo</div>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-clock" id="clockAdmin">--:--:--</div>
+    </div>
+  </div>
+
+  <div class="page-content">
+
+    <!-- LINHAS -->
+    <div class="page active" id="page-linhas">
+      <div class="sec-head">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <span class="sec-title">Linhas cadastradas</span>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="filter-btn active" id="filtro-todas" onclick="filtrarLinhas('todas',this)">Todas</button>
+            <button class="filter-btn" id="filtro-ativo" onclick="filtrarLinhas('ativo',this)">Ativas</button>
+            <button class="filter-btn" id="filtro-inativo" onclick="filtrarLinhas('inativo',this)">Inativas</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+
+          <button class="btn btn-primary" onclick="openLinhaModal()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nova Linha
+          </button>
+        </div>
+      </div>
+      <div class="section-card">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Linha</th>
+              <th>Sentido</th>
+              <th>Telemetria Ida</th>
+              <th>Telemetria Volta</th>
+              <th>Status</th>
+              <th>A&#231;&#245;es</th>
+            </tr>
+          </thead>
+          <tbody id="linhas-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ALERTAS -->
+    <div class="page" id="page-alertas">
+      <div class="sec-head">
+        <span class="sec-title">Alertas e Not&#237;cias</span>
+        <button class="btn btn-primary" onclick="openAlertaModal()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Novo
+        </button>
+      </div>
+      <div class="filter-bar">
+        <button class="filter-btn active" onclick="filterAlertas('todos',this)">Todos</button>
+        <button class="filter-btn" onclick="filterAlertas('ativo',this)">Ativos</button>
+        <button class="filter-btn" onclick="filterAlertas('rascunho',this)">Rascunho</button>
+        <div class="search-bar">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7aada7" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="search-input" placeholder="Buscar..." oninput="searchAlertas(this.value)">
+        </div>
+      </div>
+      <div id="alertas-list"></div>
+    </div>
+
+    <!-- FALE CONOSCO -->
+    <div class="page" id="page-faleconosco">
+      <div class="sec-head">
+        <span class="sec-title">Mensagens recebidas</span>
+        <button class="btn btn-secondary btn-sm" onclick="markAllRead()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Marcar todas lidas
+        </button>
+      </div>
+      <div class="filter-bar">
+        <button class="filter-btn active" onclick="filterMsgs('todas',this)">Todas</button>
+        <button class="filter-btn" onclick="filterMsgs('reclamacao',this)">Reclama&#231;&#245;es</button>
+        <button class="filter-btn" onclick="filterMsgs('elogio',this)">Elogios</button>
+        <button class="filter-btn" onclick="filterMsgs('sugestao',this)">Sugest&#245;es</button>
+        <button class="filter-btn" onclick="filterMsgs('nao_lidas',this)">N&#227;o lidas</button>
+        <div class="search-bar">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7aada7" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="search-input" placeholder="Buscar mensagens..." oninput="searchMsgs(this.value)">
+        </div>
+      </div>
+      <div id="msgs-list"></div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- MODAL: NOVA / EDITAR LINHA -->
+<div class="modal-overlay hidden" id="modal-linha">
+  <div class="modal lg">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-linha-title">Nova Linha</div>
+      <div class="modal-close" onclick="closeModal('modal-linha')">&#215;</div>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid" style="margin-bottom:18px;">
+        <div class="form-group full">
+          <label class="form-label">Nome da linha *</label>
+          <input class="form-input" id="l-nome" placeholder="Ex: LINHA 01 - CORONEL FABRICIANO / IPATINGA" oninput="autoPreencherLabels()">
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Valor da tarifa (R$) *</label>
+          <input class="form-input" id="l-tarifa" type="number" step="0.01" min="0" placeholder="Ex: 4.50">
+        </div>
+      </div>
+      <div style="border-top:1.5px solid var(--border);padding-top:18px;">
+
+        <div class="sentido-tabs">
+          <button class="sentido-tab-btn active" id="tab-btn-ida" onclick="selSentido('ida',this)">
+            <span class="dir-arrow">&#8594;</span> Sentido Ida
+          </button>
+          <button class="sentido-tab-btn" id="tab-btn-volta" onclick="selSentido('volta',this)">
+            <span class="dir-arrow">&#8592;</span> Sentido Volta
+          </button>
+        </div>
+
+        <!-- PAINEL IDA -->
+        <div class="sentido-panel active" id="panel-ida">
+          <div class="sentido-block">
+            <div class="sentido-block-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              Sentido Ida
+            </div>
+            <div class="form-grid" style="margin-bottom:14px;">
+              <div class="form-group">
+                <label class="form-label">Sentido</label>
+                <div style="padding:9px 13px;background:rgba(0,168,150,0.06);border:1.5px solid rgba(0,168,150,0.2);border-radius:9px;font-size:13px;font-weight:600;color:var(--teal);display:flex;align-items:center;gap:6px;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                  <span id="ida-label-display">—</span>
+                </div>
+                <input type="hidden" id="ida-label">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Dura&#231;&#227;o estimada (min)</label>
+                <input class="form-input" id="ida-duracao" type="number" placeholder="Ex: 55">
+              </div>
+              <div class="form-group full">
+                <label class="form-label">C&#243;digo de Telemetria</label>
+                <input class="form-input" id="ida-telemetria" placeholder="Ex: 0021">
+              </div>
+            </div>
+            <div class="form-label" style="margin-bottom:10px;">Hor&#225;rios por per&#237;odo</div>
+            <div class="day-pills" style="margin-bottom:10px;">
+              <button class="day-pill active" onclick="selPeriod('ida','seg-sex',this)">Seg&#8211;Sex</button>
+              <button class="day-pill" onclick="selPeriod('ida','sabado',this)">S&#225;bado</button>
+              <button class="day-pill" onclick="selPeriod('ida','domingo',this)">Dom/Fer</button>
+            </div>
+            <div id="ida-period-seg-sex" class="period-panel">
+              <div class="time-list-wrap" id="ida-list-seg-sex"></div>
+              <div class="time-add-row">
+                <input type="time" class="form-input" id="ida-time-seg-sex" style="width:130px;">
+                <button class="btn btn-secondary btn-sm" onclick="addTime('ida','seg-sex')">+ Adicionar</button>
+              </div>
+            </div>
+            <div id="ida-period-sabado" class="period-panel" style="display:none;">
+              <div class="time-list-wrap" id="ida-list-sabado"></div>
+              <div class="time-add-row">
+                <input type="time" class="form-input" id="ida-time-sabado" style="width:130px;">
+                <button class="btn btn-secondary btn-sm" onclick="addTime('ida','sabado')">+ Adicionar</button>
+              </div>
+            </div>
+            <div id="ida-period-domingo" class="period-panel" style="display:none;">
+              <div class="time-list-wrap" id="ida-list-domingo"></div>
+              <div class="time-add-row">
+                <input type="time" class="form-input" id="ida-time-domingo" style="width:130px;">
+                <button class="btn btn-secondary btn-sm" onclick="addTime('ida','domingo')">+ Adicionar</button>
+              </div>
+            </div>
+            <div style="margin-top:14px;">
+              <div class="form-label" style="margin-bottom:8px;">Arquivo KML — Sentido Ida</div>
+              <div class="upload-zone" id="kml-zone-ida" onclick="document.getElementById('kml-file-ida').click()">
+                <input type="file" id="kml-file-ida" accept=".kml,.kmz" style="display:none;" onchange="handleKML('ida',this)">
+                <div class="upload-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00a896" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
+                <div class="upload-label" id="kml-label-ida">Clique para selecionar o KML de ida</div>
+                <div class="upload-hint">.kml / .kmz</div>
+              </div>
+              <button class="btn btn-secondary btn-sm" id="btn-preview-ida" style="display:none;margin-top:8px;" onclick="openMapPreview('ida')">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 6v16l7-4 8 4 7-4V2l-7 4-8-4-7 4z"/></svg>
+                Visualizar rota ida
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- PAINEL VOLTA -->
+        <div class="sentido-panel" id="panel-volta">
+          <div class="sentido-block">
+            <div class="sentido-block-title" style="color:var(--orange);">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+              Sentido Volta
+            </div>
+            <div class="form-grid" style="margin-bottom:14px;">
+              <div class="form-group">
+                <label class="form-label">Sentido</label>
+                <div style="padding:9px 13px;background:rgba(240,120,32,0.06);border:1.5px solid rgba(240,120,32,0.2);border-radius:9px;font-size:13px;font-weight:600;color:var(--orange);display:flex;align-items:center;gap:6px;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                  <span id="volta-label-display">—</span>
+                </div>
+                <input type="hidden" id="volta-label">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Dura&#231;&#227;o estimada (min)</label>
+                <input class="form-input" id="volta-duracao" type="number" placeholder="Ex: 55">
+              </div>
+              <div class="form-group full">
+                <label class="form-label">C&#243;digo de Telemetria</label>
+                <input class="form-input" id="volta-telemetria" placeholder="Ex: 0022">
+              </div>
+            </div>
+            <div class="form-label" style="margin-bottom:10px;">Hor&#225;rios por per&#237;odo</div>
+            <div class="day-pills" style="margin-bottom:10px;">
+              <button class="day-pill active" onclick="selPeriod('volta','seg-sex',this)">Seg&#8211;Sex</button>
+              <button class="day-pill" onclick="selPeriod('volta','sabado',this)">S&#225;bado</button>
+              <button class="day-pill" onclick="selPeriod('volta','domingo',this)">Dom/Fer</button>
+            </div>
+            <div id="volta-period-seg-sex" class="period-panel">
+              <div class="time-list-wrap" id="volta-list-seg-sex"></div>
+              <div class="time-add-row">
+                <input type="time" class="form-input" id="volta-time-seg-sex" style="width:130px;">
+                <button class="btn btn-secondary btn-sm" onclick="addTime('volta','seg-sex')">+ Adicionar</button>
+              </div>
+            </div>
+            <div id="volta-period-sabado" class="period-panel" style="display:none;">
+              <div class="time-list-wrap" id="volta-list-sabado"></div>
+              <div class="time-add-row">
+                <input type="time" class="form-input" id="volta-time-sabado" style="width:130px;">
+                <button class="btn btn-secondary btn-sm" onclick="addTime('volta','sabado')">+ Adicionar</button>
+              </div>
+            </div>
+            <div id="volta-period-domingo" class="period-panel" style="display:none;">
+              <div class="time-list-wrap" id="volta-list-domingo"></div>
+              <div class="time-add-row">
+                <input type="time" class="form-input" id="volta-time-domingo" style="width:130px;">
+                <button class="btn btn-secondary btn-sm" onclick="addTime('volta','domingo')">+ Adicionar</button>
+              </div>
+            </div>
+            <div style="margin-top:14px;">
+              <div class="form-label" style="margin-bottom:8px;">Arquivo KML — Sentido Volta</div>
+              <div class="upload-zone" id="kml-zone-volta" onclick="document.getElementById('kml-file-volta').click()">
+                <input type="file" id="kml-file-volta" accept=".kml,.kmz" style="display:none;" onchange="handleKML('volta',this)">
+                <div class="upload-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f07820" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
+                <div class="upload-label" id="kml-label-volta">Clique para selecionar o KML de volta</div>
+                <div class="upload-hint">.kml / .kmz</div>
+              </div>
+              <button class="btn btn-secondary btn-sm" id="btn-preview-volta" style="display:none;margin-top:8px;" onclick="openMapPreview('volta')">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 6v16l7-4 8 4 7-4V2l-7 4-8-4-7 4z"/></svg>
+                Visualizar rota volta
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-linha')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveLinha()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Salvar Linha
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: OBSERVAÇÃO DO HORÁRIO -->
+<div class="obs-modal-overlay hidden" id="obs-modal">
+  <div class="obs-modal">
+    <div class="obs-modal-title">Observação do horário</div>
+    <div class="obs-modal-sub" id="obs-modal-sub">Adicione uma observação para este horário (opcional)</div>
+    <textarea class="form-textarea" id="obs-modal-input" placeholder="Ex: Inicia em frente ao Coelho Diniz, Via Shopping, etc." style="min-height:80px;margin-bottom:14px;"></textarea>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button class="btn btn-secondary btn-sm" onclick="closeObsModal()">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="saveObs()">Salvar observação</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: KML ESPECIAL DO HORÁRIO -->
+<div class="obs-modal-overlay hidden" id="kml-horario-modal">
+  <div class="obs-modal" style="max-width:460px;">
+    <div class="obs-modal-title">Rota especial para este horário</div>
+    <div class="obs-modal-sub" id="kml-horario-sub">Horário: —</div>
+
+    <!-- Estado: sem KML -->
+    <div id="kml-horario-vazio" style="margin-bottom:14px;">
+      <div class="upload-zone" id="kml-horario-zone" onclick="document.getElementById('kml-horario-file').click()" style="padding:16px;">
+        <input type="file" id="kml-horario-file" accept=".kml,.kmz" style="display:none;" onchange="handleKMLHorario(this)">
+        <div class="upload-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00a896" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
+        <div class="upload-label" id="kml-horario-label">Clique para selecionar o KML especial</div>
+        <div class="upload-hint">.kml / .kmz</div>
+      </div>
+    </div>
+
+    <!-- Estado: tem KML -->
+    <div id="kml-horario-info" style="display:none;margin-bottom:14px;padding:10px 12px;background:rgba(0,192,96,0.06);border:1.5px solid rgba(0,192,96,0.2);border-radius:9px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00c060" stroke-width="2"><path d="M1 6v16l7-4 8 4 7-4V2l-7 4-8-4-7 4z"/></svg>
+        <span style="font-size:12px;font-weight:700;color:var(--text);flex:1;" id="kml-horario-nome">—</span>
+        <button onclick="removerKMLHorario()" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:18px;line-height:1;padding:0 2px;" title="Remover KML especial">&#215;</button>
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin-top:4px;" id="kml-horario-dist"></div>
+      <button class="btn btn-secondary btn-sm" onclick="document.getElementById('kml-horario-file').click()" style="margin-top:8px;">Substituir arquivo</button>
+    </div>
+
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button class="btn btn-secondary btn-sm" onclick="closeKMLHorarioModal()">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="saveKMLHorario()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: MAPA KML -->
+<div class="modal-overlay hidden" id="modal-mapa">
+  <div class="modal map-modal">
+    <div class="modal-header" style="padding-bottom:14px;">
+      <div class="modal-title" id="modal-mapa-title">Visualizar Rota</div>
+      <div class="modal-close" onclick="closeModal('modal-mapa')">&#215;</div>
+    </div>
+    <div style="flex:1;padding:0 22px 22px;">
+      <div id="map-preview" style="width:100%;height:100%;border-radius:12px;border:1.5px solid var(--border);min-height:400px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: NOVO ALERTA -->
+<div class="modal-overlay hidden" id="modal-alerta">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-alerta-title">Novo Alerta / Not&#237;cia</div>
+      <div class="modal-close" onclick="closeModal('modal-alerta')">&#215;</div>
+    </div>
+    <div class="modal-body">
+      <div class="notif-type-row">
+        <div class="notif-type sel" id="ntype-alerta" onclick="selAlertaTipo('alerta',this)"><div class="notif-type-icon">&#9888;&#65039;</div><div class="notif-type-label">Aviso</div></div>
+        <div class="notif-type" id="ntype-noticia" onclick="selAlertaTipo('noticia',this)"><div class="notif-type-icon">&#128240;</div><div class="notif-type-label">Not&#237;cia</div></div>
+        <div class="notif-type" id="ntype-urgente" onclick="selAlertaTipo('urgente',this)"><div class="notif-type-icon">&#128680;</div><div class="notif-type-label">Urgente</div></div>
+        <div class="notif-type" id="ntype-normal" onclick="selAlertaTipo('normal',this)"><div class="notif-type-icon">&#9989;</div><div class="notif-type-label">Normaliza&#231;&#227;o</div></div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group full"><label class="form-label">T&#237;tulo *</label><input class="form-input" id="a-titulo" placeholder="T&#237;tulo do alerta"></div>
+        <div class="form-group full"><label class="form-label">Mensagem *</label><textarea class="form-textarea" id="a-corpo" placeholder="Descreva o alerta ou not&#237;cia..."></textarea></div>
+        <div class="form-group"><label class="form-label">Linha relacionada (opcional)</label><select class="form-select" id="a-linha"><option value="">Todas as linhas</option></select></div>
+        <div class="form-group">
+          <label class="form-label">Publica&#231;&#227;o</label>
+          <div class="schedule-toggle">
+            <button class="sched-opt sel" id="sched-agora" onclick="selSchedOpt('agora')">Publicar agora</button>
+            <button class="sched-opt" id="sched-programar" onclick="selSchedOpt('programar')">Programar</button>
+          </div>
+          <div id="sched-datetime-wrap" style="display:none;"><input type="datetime-local" class="form-input" id="a-datetime"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="saveAlerta('rascunho')">Salvar rascunho</button>
+      <button class="btn btn-primary" onclick="saveAlerta('ativo')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/></svg>
+        Disparar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: MENSAGEM DETALHE -->
+<div class="modal-overlay hidden" id="modal-msg">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Detalhes da Mensagem</div>
+      <div class="modal-close" onclick="closeModal('modal-msg')">&#215;</div>
+    </div>
+    <div class="modal-body" id="modal-msg-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-danger btn-sm" onclick="deleteMsg()">Excluir</button>
+      <button class="btn btn-secondary" onclick="closeModal('modal-msg')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM DIALOG -->
+<div class="confirm-overlay hidden" id="confirm-overlay">
+  <div class="confirm-box">
+    <div class="confirm-icon">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#e63329" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+    </div>
+    <div class="confirm-title" id="confirm-title">Excluir?</div>
+    <div class="confirm-desc" id="confirm-desc">Esta a&#231;&#227;o n&#227;o pode ser desfeita.</div>
+    <div class="confirm-actions">
+      <button class="btn btn-secondary" onclick="confirmCancel()">N&#227;o, cancelar</button>
+      <button class="btn btn-danger" onclick="confirmOk()">Sim, excluir</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toasts"></div>
+
+<script>
+// ============================================================
+// DADOS
+// ============================================================
+var LINHAS = [];
+var ALERTAS = [];
+var MENSAGENS = [];
+
+// URL da Firebase Function de sincronização
+var SYNC_FUNCTION_URL = "https://sincronizareasycourse-taarlhxvla-uc.a.run.app";
+
+// ============================================================
+// STATE
+// ============================================================
+var _linhaEditId=null,_alertaEditId=null,_msgAtual=null;
+var _alertaTipoSel="alerta",_schedOpt="agora";
+var _confirmCb=null,_mapL=null;
+var _msgFilter="todas",_alertaFilter="todos";
+var _linhasFilter="todas";
+var _sentidoAtual="ida";
+var _currentPeriod={ida:"seg-sex",volta:"seg-sex"};
+
+// Estrutura nova: {hora: "06:30", obs: "Inicia frente ao Coelho Diniz"}
+var _timesTemp={
+  ida:{"seg-sex":[],"sabado":[],"domingo":[]},
+  volta:{"seg-sex":[],"sabado":[],"domingo":[]}
+};
+
+var _kmlNome={ida:"",volta:""};
+var _kmlData={ida:null,volta:null};
+var _kmlDistancia={ida:null,volta:null};
+var _previewSentido=null;
+var _fbReady=false;
+
+// OBS MODAL state
+var _obsContext={sentido:null,period:null,idx:null};
+
+// ============================================================
+// HELPERS — horários
+// ============================================================
+
+// Normaliza um item de horário para o novo formato {hora, obs}
+function normalizeHorario(item){
+  if(typeof item === "string") return {hora:item,obs:"",kmlNome:"",kmlData:null,kmlUrl:"",kmlDistancia:null};
+  return {
+    hora: item.hora||item,
+    obs:  item.obs||"",
+    kmlNome: item.kmlNome||"",
+    kmlData: item.kmlData||null,
+    kmlUrl:  item.kmlUrl||"",
+    kmlDistancia: item.kmlDistancia||null
+  };
+}
+
+// Conta horários de uma viagem (suporta array de strings ou objetos)
+function countHorariosViagem(v){
+  if(!v||!v.horarios)return 0;
+  return Object.values(v.horarios).reduce(function(a,b){
+    return a+(Array.isArray(b)?b.length:0);
+  },0);
+}
+
+// ============================================================
+// CLOCK
+// ============================================================
+function updateClock(){var d=new Date();document.getElementById("clockAdmin").textContent=("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2)+":"+("0"+d.getSeconds()).slice(-2);}
+setInterval(updateClock,1000);updateClock();
+
+// ============================================================
+// NAV
+// ============================================================
+function navTo(page,el){
+  document.querySelectorAll(".page").forEach(function(p){p.classList.remove("active");});
+  document.querySelectorAll(".nav-item").forEach(function(n){n.classList.remove("active");});
+  document.getElementById("page-"+page).classList.add("active");
+  if(el)el.classList.add("active");
+  else{var map={linhas:0,alertas:1,faleconosco:2};var items=document.querySelectorAll(".nav-item");if(map[page]!==undefined)items[map[page]].classList.add("active");}
+  var titles={
+    linhas:["Cadastro de Linhas e Horários","Gerencie as linhas, sentidos e horários do aplicativo"],
+    alertas:["Alertas e Notícias","Publique e gerencie avisos para os passageiros"],
+    faleconosco:["Fale Conosco","Mensagens enviadas pelos passageiros"]
+  };
+  var t=titles[page];
+  if(t){document.getElementById("topbar-title").textContent=t[0];document.getElementById("topbar-sub").textContent=t[1];}
+  if(page==="linhas")renderLinhas();
+  if(page==="alertas")renderAlertasPage();
+  if(page==="faleconosco")renderMsgs();
+}
+
+// ============================================================
+// BADGES
+// ============================================================
+function updateBadges(){
+  var naoLidas=MENSAGENS.filter(function(m){return !m.lida;}).length;
+  var alertasAtivos=ALERTAS.filter(function(a){return a.status==="ativo";}).length;
+  var pendentes=LINHAS.filter(function(l){return l.status==="pendente";}).length;
+
+  var bm=document.getElementById("badge-msgs");
+  bm.textContent=naoLidas;bm.style.display=naoLidas?"":"none";
+
+  var ba=document.getElementById("badge-alertas");
+  ba.textContent=alertasAtivos;ba.style.display=alertasAtivos?"":"none";
+
+  var bp=document.getElementById("badge-pendentes");
+  bp.textContent=pendentes;bp.style.display=pendentes?"":"none";
+
+  var bpb=document.getElementById("badge-pendentes-btn");
+  if(bpb){bpb.textContent=pendentes;bpb.style.display=pendentes?"":"none";}
+}
+
+// ============================================================
+// FILTRO LINHAS
+// ============================================================
+function filtrarLinhas(filtro,el){
+  _linhasFilter=filtro;
+  document.querySelectorAll("#page-linhas .filter-btn").forEach(function(b){b.classList.remove("active");});
+  if(el)el.classList.add("active");
+  renderLinhas();
+}
+
+// ============================================================
+// RENDER LINHAS
+// ============================================================
+function renderLinhas(){
+  var dados=LINHAS.filter(function(l){
+    if(_linhasFilter==="ativo")return l.status==="ativo";
+    if(_linhasFilter==="pendente")return l.status==="pendente";
+    if(_linhasFilter==="inativo")return l.status==="inativo";
+    return true;
+  });
+
+  if(!dados.length){
+    document.getElementById("linhas-tbody").innerHTML='<tr><td colspan="6"><div class="empty"><div class="empty-icon">🚌</div><div class="empty-label">Nenhuma linha encontrada</div></div></td></tr>';
+    return;
+  }
+
+  var statusTagMap={
+    ativo:'<span class="tag green">&#9679; Ativo</span>',
+    pendente:'<span class="tag orange">&#9678; Pendente</span>',
+    inativo:'<span class="tag gray">&#9675; Inativo</span>'
+  };
+
+  document.getElementById("linhas-tbody").innerHTML=dados.map(function(l){
+    var isPendente=l.status==="pendente";
+    var statusTag=statusTagMap[l.status]||'<span class="tag gray">'+l.status+'</span>';
+    var ida=l.viagens&&l.viagens.ida?l.viagens.ida:{sentidoLabel:"—",telemetria:"",horarios:{}};
+    var volta=l.viagens&&l.viagens.volta?l.viagens.volta:{sentidoLabel:"—",telemetria:"",horarios:{}};
+
+    var acoes='<button class="btn-icon" title="Editar" onclick="editLinha(\''+l.id+'\')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>';
+
+    if(isPendente){
+      acoes+='<button class="btn btn-success btn-sm" onclick="aprovarLinha(\''+l.id+'\')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Aprovar</button>';
+      acoes+='<button class="btn btn-danger btn-sm" onclick="rejeitarLinha(\''+l.id+'\')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Rejeitar</button>';
+    } else {
+      acoes+='<button class="btn-icon" title="'+(l.status==="ativo"?"Desativar":"Ativar")+'" onclick="toggleLinha(\''+l.id+'\')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">'+(l.status==="ativo"?'<line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/><circle cx="12" cy="12" r="10"/>':"<polyline points='20 6 9 17 4 12'/>")+' </svg></button>';
+      acoes+='<button class="btn-icon danger" title="Excluir" onclick="confirmDeleteLinha(\''+l.id+'\')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button>';
+    }
+
+    return '<tr>'
+      +'<td>'
+        +'<div style="font-weight:700;color:var(--navy);font-size:13px;">'+(l.nome||l.id)+'</div>'
+        +'<div style="display:inline-flex;align-items:center;gap:4px;margin-top:3px;">'
+          +(l.tarifa?'<svg width="11" height="11" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;flex-shrink:0"><circle cx="10" cy="10" r="10" fill="#1a2e44"/><line x1="10" y1="3.5" x2="10" y2="16.5" stroke="white" stroke-width="1.5" stroke-linecap="round"/><path d="M13 7.2C13 5.9 11.7 5 10 5S7 5.9 7 7.2 8.3 9.5 10 9.5s3 1.3 3 2.8S11.7 15 10 15s-3-1.3-3-2.8" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg><strong style="font-size:12px;color:var(--text);"> R$ '+parseFloat(l.tarifa).toFixed(2).replace(".",",")+'</strong>':'')+
+        '</div>'
+      +'</td>'
+      +'<td><div style="display:flex;flex-direction:column;gap:4px;">'
+        +'<span class="viagem-badge ida">&#8594; '+(ida.sentidoLabel||'—')+'</span>'
+        +'<span class="viagem-badge volta">&#8592; '+(volta.sentidoLabel||'—')+'</span>'
+      +'</div></td>'
+      +'<td><span style="font-family:\'Space Mono\',monospace;font-size:12px;color:var(--teal);font-weight:700;">'+(ida.telemetria||'—')+'</span></td>'
+      +'<td><span style="font-family:\'Space Mono\',monospace;font-size:12px;color:var(--orange);font-weight:700;">'+(volta.telemetria||'—')+'</span></td>'
+      +'<td>'+statusTag+'</td>'
+      +'<td><div class="action-row">'+acoes+'</div></td>'
+      +'</tr>';
+  }).join("");
+}
+
+// ============================================================
+// APROVAR / REJEITAR
+// ============================================================
+async function aprovarLinha(id){
+  try{
+    if(_fbReady){var fb=window._fb;await fb.updateDoc(fb.doc(fb.db,"linhas",id),{status:"ativo",aprovadoEm:fb.serverTimestamp()});}
+    else{var l=LINHAS.find(function(x){return x.id===id;});if(l)l.status="ativo";renderLinhas();updateBadges();}
+    toast("✅ Linha aprovada e publicada no app!","success");
+  }catch(e){toast("❌ Erro ao aprovar: "+e.message,"error");}
+}
+
+async function rejeitarLinha(id){
+  var l=LINHAS.find(function(x){return x.id===id;});
+  document.getElementById("confirm-title").textContent="Rejeitar linha?";
+  document.getElementById("confirm-desc").innerHTML='A linha <strong>'+(l?l.nome:id)+'</strong> será removida do sistema.';
+  _confirmCb=async function(){
+    try{
+      if(_fbReady){var fb=window._fb;await fb.deleteDoc(fb.doc(fb.db,"linhas",id));toast("🗑 Linha rejeitada e removida","info");}
+      else{LINHAS=LINHAS.filter(function(x){return x.id!==id;});renderLinhas();updateBadges();toast("🗑 Linha rejeitada","info");}
+    }catch(e){toast("❌ Erro: "+e.message,"error");}
+  };
+  document.getElementById("confirm-overlay").classList.remove("hidden");
+}
+
+// ============================================================
+// SINCRONIZAR EASY COURSE
+// ============================================================
+async function sincronizarEasyCourse(){
+  var btn=document.getElementById("btn-sincronizar");
+  var icon=document.getElementById("sync-icon");
+  var resultBox=document.getElementById("sync-result-box");
+  var resultContent=document.getElementById("sync-result-content");
+  btn.disabled=true;icon.classList.add("spinning");
+  btn.childNodes[1].textContent=" Sincronizando...";
+  resultBox.classList.remove("show");
+  toast("🔄 Buscando rotas na Easy Course...","info");
+  try{
+    var resp=await fetch(SYNC_FUNCTION_URL,{method:"POST",headers:{"Content-Type":"application/json"}});
+    var data=await resp.json();
+    if(data.sucesso){
+      resultBox.style.background="rgba(0,192,96,0.06)";resultBox.style.border="1.5px solid rgba(0,192,96,0.25)";
+      resultContent.innerHTML='<div style="font-size:13px;font-weight:800;color:var(--green);margin-bottom:8px;">✅ Sincronização concluída!</div>'
+        +'<div style="font-size:12px;color:var(--text2);line-height:1.8;">📦 <strong>'+data.total_rotas+'</strong> rotas encontradas<br>🚌 <strong>'+data.total_linhas+'</strong> linhas agrupadas<br>🆕 <strong>'+data.novas+'</strong> linhas novas aguardando aprovação<br>🔄 <strong>'+data.atualizacoes_pendentes+'</strong> atualizações pendentes</div>'
+        +(data.novas>0||data.atualizacoes_pendentes>0?'<div style="margin-top:10px;"><button class="btn btn-secondary btn-sm" onclick="filtrarLinhas(\'pendente\',document.getElementById(\'filtro-pendente\'))">Ver pendentes →</button></div>':"");
+      resultBox.classList.add("show");toast("✅ "+data.mensagem,"success");
+    }else{
+      resultBox.style.background="rgba(230,51,41,0.06)";resultBox.style.border="1.5px solid rgba(230,51,41,0.2)";
+      resultContent.innerHTML='<div style="font-size:13px;font-weight:800;color:var(--red);">❌ Erro na sincronização</div><div style="font-size:12px;color:var(--text2);margin-top:6px;">'+(data.error||"Erro desconhecido")+'</div>';
+      resultBox.classList.add("show");toast("❌ Erro na sincronização","error");
+    }
+  }catch(err){
+    resultBox.style.background="rgba(230,51,41,0.06)";resultBox.style.border="1.5px solid rgba(230,51,41,0.2)";
+    resultContent.innerHTML='<div style="font-size:13px;font-weight:800;color:var(--red);">❌ Não foi possível conectar à função</div><div style="font-size:12px;color:var(--text2);margin-top:6px;">'+err.message+'</div>';
+    resultBox.classList.add("show");toast("❌ Erro de conexão com a function","error");
+  }finally{
+    btn.disabled=false;icon.classList.remove("spinning");btn.childNodes[1].textContent=" Sincronizar Easy Course";
+  }
+}
+
+// ============================================================
+// MODAL LINHA — OPEN / EDIT / SAVE
+// ============================================================
+// Gera label ida/volta a partir do nome da linha
+function gerarLabels(nome){
+  var partes = nome.split(" - ");
+  var trajeto = partes.length > 1 ? partes.slice(1).join(" - ").trim() : nome.trim();
+  function titleCase(s){ return s.toLowerCase().replace(/\b\w/g,function(c){return c.toUpperCase();}); }
+  var labelIda = titleCase(trajeto);
+  var trechos = trajeto.split(" / ");
+  var labelVolta = trechos.length >= 2 ? titleCase(trechos.slice().reverse().join(" / ")) : labelIda;
+  return {ida: labelIda, volta: labelVolta};
+}
+
+function autoPreencherLabels(){
+  var nome = document.getElementById("l-nome").value;
+  if(!nome) return;
+  var labels = gerarLabels(nome);
+  document.getElementById("ida-label").value = labels.ida;
+  document.getElementById("volta-label").value = labels.volta;
+  var idaDisp = document.getElementById("ida-label-display");
+  var voltaDisp = document.getElementById("volta-label-display");
+  if(idaDisp) idaDisp.textContent = labels.ida || "—";
+  if(voltaDisp) voltaDisp.textContent = labels.volta || "—";
+}
+
+function openLinhaModal(id){
+  _linhaEditId=id||null;
+  _timesTemp={ida:{"seg-sex":[],"sabado":[],"domingo":[]},volta:{"seg-sex":[],"sabado":[],"domingo":[]}};
+  _kmlNome={ida:"",volta:""};_kmlData={ida:null,volta:null};_kmlDistancia={ida:null,volta:null};
+  document.getElementById("modal-linha-title").textContent=id?"Editar Linha":"Nova Linha";
+  // Limpa flag de edição manual nos labels
+  document.getElementById("ida-label").dataset.manual="";
+  document.getElementById("volta-label").dataset.manual="";
+
+  if(id){
+    var l=LINHAS.find(function(x){return x.id===id;});
+    if(!l)return;
+    document.getElementById("l-nome").value=l.nome||"";
+    document.getElementById("l-tarifa").value=l.tarifa||"";
+    // Gera labels automaticamente a partir do nome — sempre usa o gerado
+    autoPreencherLabels();
+    ["ida","volta"].forEach(function(s){
+      var v=(l.viagens&&l.viagens[s])||{};
+      // Label sempre gerado automaticamente do nome — não usa o salvo
+      document.getElementById(s+"-duracao").value=v.duracao||"";
+      document.getElementById(s+"-telemetria").value=v.telemetria||"";
+      // Normaliza horários para novo formato
+      var h=v.horarios||{"seg-sex":[],"sabado":[],"domingo":[]};
+      _timesTemp[s]={
+        "seg-sex":(h["seg-sex"]||[]).map(normalizeHorario),
+        "sabado":(h["sabado"]||[]).map(normalizeHorario),
+        "domingo":(h["domingo"]||[]).map(normalizeHorario)
+      };
+      _kmlDistancia[s]=v.distancia||null;
+      if(v.kmlNome){
+        _kmlNome[s]=v.kmlNome;
+        document.getElementById("kml-label-"+s).textContent="📍 "+v.kmlNome;
+        document.getElementById("kml-zone-"+s).querySelector(".upload-hint").textContent=v.distancia?"Distância: "+parseFloat(v.distancia).toFixed(2).replace(".",",")+" km":"Arquivo salvo";
+        document.getElementById("kml-zone-"+s).classList.add("has-file");
+        document.getElementById("btn-preview-"+s).style.display="";
+      }else{
+        document.getElementById("kml-label-"+s).textContent="Clique para selecionar o KML de "+s;
+        document.getElementById("kml-zone-"+s).querySelector(".upload-hint").textContent=".kml / .kmz";
+        document.getElementById("kml-zone-"+s).classList.remove("has-file");
+        document.getElementById("btn-preview-"+s).style.display="none";
+      }
+    });
+  }else{
+    ["l-nome","l-tarifa","ida-label","ida-duracao","ida-telemetria","volta-label","volta-duracao","volta-telemetria"].forEach(function(fid){document.getElementById(fid).value="";});
+    ["ida","volta"].forEach(function(s){
+      document.getElementById("kml-label-"+s).textContent="Clique para selecionar o KML de "+s;
+      document.getElementById("kml-zone-"+s).querySelector(".upload-hint").textContent=".kml / .kmz";
+      document.getElementById("kml-zone-"+s).classList.remove("has-file");
+      document.getElementById("btn-preview-"+s).style.display="none";
+    });
+  }
+
+  selSentido("ida",document.getElementById("tab-btn-ida"));
+  selPeriod("ida","seg-sex",document.querySelector("#panel-ida .day-pill"));
+  selPeriod("volta","seg-sex",document.querySelector("#panel-volta .day-pill"));
+  ["ida","volta"].forEach(function(s){["seg-sex","sabado","domingo"].forEach(function(p){renderTimeList(s,p);});});
+  document.getElementById("modal-linha").classList.remove("hidden");
+}
+function editLinha(id){openLinhaModal(id);}
+
+// ============================================================
+// SENTIDO TABS
+// ============================================================
+function selSentido(s,el){
+  _sentidoAtual=s;
+  document.querySelectorAll(".sentido-tab-btn").forEach(function(b){b.classList.remove("active");});
+  if(el)el.classList.add("active");
+  document.querySelectorAll(".sentido-panel").forEach(function(p){p.classList.remove("active");});
+  document.getElementById("panel-"+s).classList.add("active");
+}
+
+// ============================================================
+// PERÍODO
+// ============================================================
+function selPeriod(sentido,p,el){
+  _currentPeriod[sentido]=p;
+  var panel=document.getElementById("panel-"+sentido);
+  if(panel){
+    panel.querySelectorAll(".day-pill").forEach(function(d){d.classList.remove("active");});
+    if(el)el.classList.add("active");
+    panel.querySelectorAll(".period-panel").forEach(function(pp){pp.style.display="none";});
+    var periodEl=document.getElementById(sentido+"-period-"+p);
+    if(periodEl)periodEl.style.display="block";
+  }
+}
+
+// ============================================================
+// HORÁRIOS — novo sistema de lista com observações
+// ============================================================
+function addTime(sentido,p){
+  var inp=document.getElementById(sentido+"-time-"+p);
+  var t=inp.value;
+  if(!t){toast("Selecione um horário","error");return;}
+  var jaExiste=_timesTemp[sentido][p].some(function(x){return x.hora===t;});
+  if(jaExiste){toast("Horário já adicionado","error");return;}
+  _timesTemp[sentido][p].push({hora:t,obs:""});
+  _timesTemp[sentido][p].sort(function(a,b){return a.hora.localeCompare(b.hora);});
+  renderTimeList(sentido,p);
+  inp.value="";
+}
+
+function removeTime(sentido,p,idx){
+  _timesTemp[sentido][p].splice(idx,1);
+  renderTimeList(sentido,p);
+}
+
+function openObsModal(sentido,p,idx){
+  _obsContext={sentido:sentido,period:p,idx:idx};
+  var item=_timesTemp[sentido][p][idx];
+  document.getElementById("obs-modal-sub").textContent='Horário: '+item.hora;
+  document.getElementById("obs-modal-input").value=item.obs||"";
+  document.getElementById("obs-modal").classList.remove("hidden");
+  setTimeout(function(){document.getElementById("obs-modal-input").focus();},100);
+}
+
+function closeObsModal(){
+  document.getElementById("obs-modal").classList.add("hidden");
+  _obsContext={sentido:null,period:null,idx:null};
+}
+
+function saveObs(){
+  var ctx=_obsContext;
+  if(ctx.sentido===null)return;
+  var obs=document.getElementById("obs-modal-input").value.trim();
+  _timesTemp[ctx.sentido][ctx.period][ctx.idx].obs=obs;
+  renderTimeList(ctx.sentido,ctx.period);
+  closeObsModal();
+}
+
+// ── KML ESPECIAL POR HORÁRIO ──────────────────────────────────
+var _kmlHorarioCtx={sentido:null,period:null,idx:null};
+var _kmlHorarioTemp={nome:"",data:null,distancia:null};
+
+function openKMLHorarioModal(sentido,p,idx){
+  _kmlHorarioCtx={sentido:sentido,period:p,idx:idx};
+  var item=_timesTemp[sentido][p][idx];
+  document.getElementById("kml-horario-sub").textContent="Horário: "+item.hora+(item.obs?" · "+item.obs:"");
+
+  // Carrega estado atual
+  _kmlHorarioTemp={
+    nome: item.kmlNome||"",
+    data: item.kmlData||null,
+    url:  item.kmlUrl||"",
+    distancia: item.kmlDistancia||null
+  };
+  atualizarEstadoKMLHorario();
+  document.getElementById("kml-horario-modal").classList.remove("hidden");
+}
+
+function atualizarEstadoKMLHorario(){
+  var temKml=!!(_kmlHorarioTemp.nome||_kmlHorarioTemp.url);
+  document.getElementById("kml-horario-vazio").style.display=temKml?"none":"block";
+  document.getElementById("kml-horario-info").style.display=temKml?"block":"none";
+  if(temKml){
+    document.getElementById("kml-horario-nome").textContent=_kmlHorarioTemp.nome||"KML salvo";
+    var dist=_kmlHorarioTemp.distancia;
+    document.getElementById("kml-horario-dist").textContent=dist?"Distância: "+dist.toFixed(2).replace(".",",")+" km":"";
+  }
+  // Reset label do upload
+  document.getElementById("kml-horario-label").textContent="Clique para selecionar o KML especial";
+  document.getElementById("kml-horario-zone").classList.toggle("has-file",temKml);
+}
+
+function handleKMLHorario(input){
+  if(!input.files||!input.files[0])return;
+  var f=input.files[0];
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var km=calcKMLDistancia(e.target.result);
+    _kmlHorarioTemp={nome:f.name,data:e.target.result,url:"",distancia:km};
+    document.getElementById("kml-horario-label").textContent="📍 "+f.name;
+    document.getElementById("kml-horario-zone").classList.add("has-file");
+    atualizarEstadoKMLHorario();
+  };
+  reader.readAsText(f);
+}
+
+function removerKMLHorario(){
+  _kmlHorarioTemp={nome:"",data:null,url:"",distancia:null};
+  atualizarEstadoKMLHorario();
+}
+
+function saveKMLHorario(){
+  var ctx=_kmlHorarioCtx;
+  if(ctx.sentido===null)return;
+  var item=_timesTemp[ctx.sentido][ctx.period][ctx.idx];
+  item.kmlNome=_kmlHorarioTemp.nome||"";
+  item.kmlData=_kmlHorarioTemp.data||null;
+  item.kmlUrl=_kmlHorarioTemp.url||"";
+  item.kmlDistancia=_kmlHorarioTemp.distancia||null;
+  renderTimeList(ctx.sentido,ctx.period);
+  closeKMLHorarioModal();
+  toast(item.kmlNome?"🗺️ Rota especial salva para "+item.hora:"🗺️ Rota especial removida","success");
+}
+
+function closeKMLHorarioModal(){
+  document.getElementById("kml-horario-modal").classList.add("hidden");
+  _kmlHorarioCtx={sentido:null,period:null,idx:null};
+  _kmlHorarioTemp={nome:"",data:null,url:"",distancia:null};
+  // Limpa input de arquivo
+  var inp=document.getElementById("kml-horario-file");
+  if(inp)inp.value="";
+}
+
+function renderTimeList(sentido,p){
+  var wrap=document.getElementById(sentido+"-list-"+p);
+  if(!wrap)return;
+  var items=_timesTemp[sentido][p];
+  if(!items||!items.length){
+    wrap.innerHTML='<div class="time-empty">Nenhum horário adicionado</div>';
+    return;
+  }
+  // Verifica se a viagem tem KML padrão
+  var viagemTemKml=!!(_kmlNome[sentido]||_kmlData[sentido]);
+
+  wrap.innerHTML=items.map(function(item,idx){
+    var hasObs=item.obs&&item.obs.trim().length>0;
+    // 3 estados: sem kml | kml padrão herdado | kml especial do horário
+    var hasKmlEspecial=!!(item.kmlNome||item.kmlUrl||item.kmlData);
+    var hasKmlPadrao=!hasKmlEspecial&&viagemTemKml;
+    var kmlClass=hasKmlEspecial?" has-kml-especial":hasKmlPadrao?" has-kml-padrao":"";
+    var kmlTooltip=hasKmlEspecial?"Rota especial (personalizada)":hasKmlPadrao?"KML padrão da viagem":"Sem KML — adicionar rota especial";
+
+    var obsIcon=hasObs
+      ?'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>'
+      :'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+
+    // Ícone do mapa: outline = sem kml, preenchido preto = padrão, preenchido azul = especial
+    var kmlFill=hasKmlEspecial?"#2563eb":hasKmlPadrao?"#1a2e44":"none";
+    var kmlStroke=hasKmlEspecial?"#2563eb":hasKmlPadrao?"#1a2e44":"currentColor";
+    var kmlIcon='<svg width="16" height="16" viewBox="0 0 24 24" fill="'+kmlFill+'" stroke="'+kmlStroke+'" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>';
+
+    return '<div class="time-list-item">'
+      +'<span class="time-list-hora">'+item.hora+'</span>'
+      +(hasObs?'<span class="time-list-obs has-text">'+item.obs+'</span>':'<span class="time-list-obs"></span>')
+      +'<div class="time-list-actions">'
+        +'<button class="obs-btn'+(hasObs?" has-obs":"")
+          +'" onclick="openObsModal(\''+sentido+'\',\''+p+'\','+idx+')">'
+          +obsIcon
+          +'<span class="obs-tooltip">'+(hasObs?"Editar obs.":"Adicionar obs.")+'</span>'
+        +'</button>'
+        +'<button class="kml-btn'+kmlClass
+          +'" onclick="openKMLHorarioModal(\''+sentido+'\',\''+p+'\','+idx+')">'
+          +kmlIcon
+          +'<span class="obs-tooltip">'+kmlTooltip+'</span>'
+        +'</button>'
+        +'<button class="time-remove-btn" onclick="removeTime(\''+sentido+'\',\''+p+'\','+idx+')" title="Remover">×</button>'
+      +'</div>'
+    +'</div>';
+  }).join("");
+}
+
+// ============================================================
+// KML
+// ============================================================
+function haversine(lat1,lon1,lat2,lon2){var R=6371,dLat=(lat2-lat1)*Math.PI/180,dLon=(lon2-lon1)*Math.PI/180;var a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
+function calcKMLDistancia(kmlText){
+  try{var parser=new DOMParser(),kml=parser.parseFromString(kmlText,"application/xml"),totalKm=0;
+  Array.from(kml.getElementsByTagName("Placemark")).forEach(function(pm){var ls=pm.getElementsByTagName("LineString");if(!ls.length)return;var pts=ls[0].getElementsByTagName("coordinates")[0].textContent.trim().split(/\s+/).map(function(c){var p=c.split(",");return{lat:parseFloat(p[1]),lng:parseFloat(p[0])};}).filter(function(p){return !isNaN(p.lat)&&!isNaN(p.lng);});for(var i=1;i<pts.length;i++)totalKm+=haversine(pts[i-1].lat,pts[i-1].lng,pts[i].lat,pts[i].lng);});
+  return totalKm>0?parseFloat(totalKm.toFixed(2)):null;}catch(e){return null;}}
+
+function handleKML(sentido,input){
+  if(!input.files||!input.files[0])return;
+  var f=input.files[0];_kmlNome[sentido]=f.name;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    _kmlData[sentido]=e.target.result;
+    var km=calcKMLDistancia(e.target.result);_kmlDistancia[sentido]=km;
+    var zone=document.getElementById("kml-zone-"+sentido);
+    document.getElementById("kml-label-"+sentido).textContent="📍 "+f.name;
+    zone.querySelector(".upload-hint").textContent=km?"Distância calculada: "+km.toFixed(2).replace(".",",")+" km":"Arquivo carregado";
+    zone.classList.add("has-file");document.getElementById("btn-preview-"+sentido).style.display="";
+  };
+  reader.readAsText(f);
+}
+
+function openMapPreview(sentido){
+  _previewSentido=sentido||"ida";
+  document.getElementById("modal-mapa-title").textContent="Rota — Sentido "+(_previewSentido==="ida"?"Ida":"Volta");
+  document.getElementById("modal-mapa").classList.remove("hidden");
+  setTimeout(function(){
+    if(_mapL){_mapL.remove();_mapL=null;}
+    _mapL=L.map("map-preview",{zoomControl:true,attributionControl:false});
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(_mapL);
+    _mapL.setView([-19.5,-42.6],12);
+    var kmlText=_kmlData[_previewSentido];
+    var cor=_previewSentido==="ida"?"#00a896":"#f07820";
+    if(kmlText){
+      try{
+        var parser=new DOMParser(),kml=parser.parseFromString(kmlText,"application/xml"),coords=[];
+        Array.from(kml.getElementsByTagName("Placemark")).forEach(function(pm){
+          var ls=pm.getElementsByTagName("LineString");
+          if(ls.length){ls[0].getElementsByTagName("coordinates")[0].textContent.trim().split(/\s+/).forEach(function(c){var pts=c.split(",");if(pts.length>=2)coords.push([parseFloat(pts[1]),parseFloat(pts[0])]);});}
+          var pt=pm.getElementsByTagName("Point");
+          if(pt.length){var ptC=pt[0].getElementsByTagName("coordinates")[0].textContent.trim().split(",");var lat=parseFloat(ptC[1]),lng=parseFloat(ptC[0]);if(!isNaN(lat)&&!isNaN(lng)){var nm=pm.getElementsByTagName("name")[0];L.circleMarker([lat,lng],{radius:5,color:cor,fillColor:cor,fillOpacity:0.9,weight:2}).bindPopup(nm?nm.textContent:"Parada").addTo(_mapL);}}
+        });
+        if(coords.length){var poly=L.polyline(coords,{color:cor,weight:4,opacity:0.85}).addTo(_mapL);_mapL.fitBounds(poly.getBounds(),{padding:[30,30]});}
+      }catch(e){toast("Erro ao carregar KML","error");}
+    }
+  },300);
+}
+
+// ============================================================
+// SAVE LINHA
+// ============================================================
+async function saveLinha(){
+  var nome=document.getElementById("l-nome").value.trim();
+  var tarifa=document.getElementById("l-tarifa").value.trim();
+  // Garante labels atualizados antes de salvar
+  autoPreencherLabels();
+  var idaLabel=document.getElementById("ida-label").value.trim();
+  var voltaLabel=document.getElementById("volta-label").value.trim();
+  if(!nome){toast("⚠️ Preencha o nome da linha","error");return;}
+
+  var obj={
+    nome,tarifa,status:"ativo",
+    viagens:{
+      ida:{sentido:"ida",sentidoLabel:idaLabel,duracao:document.getElementById("ida-duracao").value.trim(),telemetria:document.getElementById("ida-telemetria").value.trim(),distancia:_kmlDistancia.ida,kmlNome:_kmlNome.ida,kmlData:_kmlData.ida,kmlUrl:"",horarios:JSON.parse(JSON.stringify(_timesTemp.ida))},
+      volta:{sentido:"volta",sentidoLabel:voltaLabel,duracao:document.getElementById("volta-duracao").value.trim(),telemetria:document.getElementById("volta-telemetria").value.trim(),distancia:_kmlDistancia.volta,kmlNome:_kmlNome.volta,kmlData:_kmlData.volta,kmlUrl:"",horarios:JSON.parse(JSON.stringify(_timesTemp.volta))}
+    }
+  };
+
+  try{
+    toast("💾 Salvando...","info");
+    if(_fbReady)await salvarLinhaFirebase(obj,_linhaEditId||null);
+    else{if(_linhaEditId){var idx=LINHAS.findIndex(function(l){return l.id===_linhaEditId;});LINHAS[idx]={...LINHAS[idx],...obj};}else{LINHAS.push({id:"L"+Date.now().toString().slice(-6),...obj});}renderLinhas();updateBadges();}
+    closeModal("modal-linha");
+    toast(_linhaEditId?"✅ Linha atualizada":"✅ Linha salva","success");
+  }catch(e){toast("❌ Erro ao salvar: "+e.message,"error");}
+}
+
+function toggleLinha(id){
+  var l=LINHAS.find(function(x){return x.id===id;});if(!l)return;
+  var novoStatus=l.status==="ativo"?"inativo":"ativo";
+  if(_fbReady){var fb=window._fb;fb.updateDoc(fb.doc(fb.db,"linhas",id),{status:novoStatus}).then(function(){toast(novoStatus==="ativo"?"✅ Linha ativada":"⏸ Linha desativada","info");}).catch(function(e){toast("❌ Erro: "+e.message,"error");});}
+  else{l.status=novoStatus;renderLinhas();toast(novoStatus==="ativo"?"✅ Linha ativada":"⏸ Linha desativada","info");}
+}
+
+function confirmDeleteLinha(id){
+  var l=LINHAS.find(function(x){return x.id===id;});
+  document.getElementById("confirm-title").textContent="Excluir linha?";
+  document.getElementById("confirm-desc").innerHTML='Você está prestes a excluir <strong>'+(l?l.nome:id)+'</strong>. Esta ação não pode ser desfeita.';
+  _confirmCb=async function(){
+    try{if(_fbReady)await excluirLinhaFirebase(id);else LINHAS=LINHAS.filter(function(x){return x.id!==id;});renderLinhas();updateBadges();toast("🗑 Linha excluída","info");}catch(e){toast("❌ Erro: "+e.message,"error");}
+  };
+  document.getElementById("confirm-overlay").classList.remove("hidden");
+}
+function confirmOk(){if(_confirmCb)_confirmCb();_confirmCb=null;document.getElementById("confirm-overlay").classList.add("hidden");}
+function confirmCancel(){_confirmCb=null;document.getElementById("confirm-overlay").classList.add("hidden");}
+
+// ============================================================
+// ALERTAS
+// ============================================================
+function populateLinhaSelect(){
+  var sel=document.getElementById("a-linha");if(!sel)return;
+  var cur=sel.value;
+  sel.innerHTML='<option value="">Todas as linhas</option>';
+  LINHAS.filter(function(l){return l.status==="ativo";}).forEach(function(l){var o=document.createElement("option");o.value=l.id;o.textContent=l.nome;sel.appendChild(o);});
+  sel.value=cur;
+}
+function renderAlertasPage(){
+  var list=document.getElementById("alertas-list");
+  var data=ALERTAS.filter(function(a){if(_alertaFilter==="ativo")return a.status==="ativo";if(_alertaFilter==="rascunho")return a.status==="rascunho";return true;});
+  if(!data.length){list.innerHTML='<div class="empty"><div class="empty-icon">🔔</div><div class="empty-label">Nenhum alerta</div></div>';return;}
+  list.innerHTML=data.map(function(a){
+    var tipoTag={alerta:'<span class="tag yellow">⚠️ Aviso</span>',noticia:'<span class="tag teal">📰 Notícia</span>',urgente:'<span class="tag red">🚨 Urgente</span>',normal:'<span class="tag green">✅ Normal</span>'}[a.tipo]||'<span class="tag gray">'+a.tipo+'</span>';
+    var statusTag=a.status==="ativo"?'<span class="tag green">● Ativo</span>':'<span class="tag gray">○ Rascunho</span>';
+    var linhaTag=a.linha?'<span class="tag teal" style="font-size:9px;">🚌 '+a.linha+'</span>':"";
+    var d=a.criadoEm?new Date(a.criadoEm.seconds?a.criadoEm.seconds*1000:a.criadoEm):null;
+    var dataStr=d?(d.getDate()+"/"+(d.getMonth()+1)+"/"+d.getFullYear()):(a.data||"");
+    return '<div class="section-card" style="margin-bottom:10px;padding:16px 18px;">'
+      +'<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">'
+      +'<div style="flex:1;min-width:0;">'
+      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">'+tipoTag+statusTag+linhaTag+'<span style="font-size:10px;color:var(--text3);margin-left:auto;">'+dataStr+'</span></div>'
+      +'<div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:4px;">'+a.titulo+'</div>'
+      +'<div style="font-size:12px;color:var(--text2);line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">'+a.corpo+'</div>'
+      +'</div>'
+      +'<div class="action-row" style="flex-shrink:0;">'
+      +(a.status==="rascunho"?'<button class="btn btn-secondary btn-sm" onclick="publishAlerta(\''+a.id+'\')">Publicar</button>':'<button class="btn btn-secondary btn-sm" onclick="unpublishAlerta(\''+a.id+'\')">Despublicar</button>')
+      +'<button class="btn-icon danger" onclick="deleteAlerta(\''+a.id+'\')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>'
+      +'</div></div></div>';
+  }).join("");
+}
+function openAlertaModal(){
+  _alertaEditId=null;document.getElementById("modal-alerta-title").textContent="Novo Alerta / Notícia";
+  document.getElementById("a-titulo").value="";document.getElementById("a-corpo").value="";
+  populateLinhaSelect();document.getElementById("a-linha").value="";
+  selAlertaTipo("alerta",document.getElementById("ntype-alerta"));selSchedOpt("agora");
+  document.getElementById("modal-alerta").classList.remove("hidden");
+}
+async function saveAlerta(status){
+  var titulo=document.getElementById("a-titulo").value.trim();
+  var corpo=document.getElementById("a-corpo").value.trim();
+  if(!titulo||!corpo){toast("⚠️ Preencha título e mensagem","error");return;}
+  var obj={tipo:_alertaTipoSel,titulo,corpo,status,linha:document.getElementById("a-linha").value};
+  if(_schedOpt==="programar"){obj.status="agendado";obj.dataAgendada=document.getElementById("a-datetime").value;}
+  try{
+    if(_fbReady)await salvarAlertaFirebase(obj);
+    else{var d=new Date();ALERTAS.unshift({id:"A"+Date.now(),tipo:obj.tipo,titulo,corpo,status:obj.status,linha:obj.linha,data:(d.getDate()+"/"+(d.getMonth()+1)+"/"+d.getFullYear())});renderAlertasPage();}
+    closeModal("modal-alerta");toast(status==="ativo"?"📣 Alerta publicado":"💾 Rascunho salvo","success");
+  }catch(e){toast("❌ Erro: "+e.message,"error");}
+}
+function selAlertaTipo(t,el){_alertaTipoSel=t;document.querySelectorAll(".notif-type").forEach(function(n){n.classList.remove("sel");});if(el)el.classList.add("sel");}
+function selSchedOpt(opt){_schedOpt=opt;document.getElementById("sched-agora").classList.toggle("sel",opt==="agora");document.getElementById("sched-programar").classList.toggle("sel",opt==="programar");document.getElementById("sched-datetime-wrap").style.display=opt==="programar"?"":"none";}
+async function publishAlerta(id){try{if(_fbReady)await updateAlertaStatus(id,"ativo");else ALERTAS.find(function(a){return a.id===id;}).status="ativo";renderAlertasPage();updateBadges();toast("📣 Publicado","success");}catch(e){toast("❌ Erro","error");}}
+async function unpublishAlerta(id){try{if(_fbReady)await updateAlertaStatus(id,"rascunho");else ALERTAS.find(function(a){return a.id===id;}).status="rascunho";renderAlertasPage();updateBadges();toast("⏸ Despublicado","info");}catch(e){toast("❌ Erro","error");}}
+async function deleteAlerta(id){try{if(_fbReady)await excluirAlertaFirebase(id);else ALERTAS=ALERTAS.filter(function(a){return a.id!==id;});renderAlertasPage();updateBadges();toast("🗑 Excluído","info");}catch(e){toast("❌ Erro","error");}}
+function filterAlertas(f,el){_alertaFilter=f;document.querySelectorAll("#page-alertas .filter-btn").forEach(function(b){b.classList.remove("active");});if(el)el.classList.add("active");renderAlertasPage();}
+function searchAlertas(q){q=q.toLowerCase();if(!q){renderAlertasPage();return;}var data=ALERTAS.filter(function(a){return a.titulo.toLowerCase().includes(q)||a.corpo.toLowerCase().includes(q);});document.getElementById("alertas-list").innerHTML=data.map(function(a){return '<div class="section-card" style="margin-bottom:10px;padding:14px 16px;"><div style="font-size:13px;font-weight:800;color:var(--text);">'+a.titulo+'</div></div>';}).join("")||'<div class="empty"><div class="empty-icon">🔍</div><div class="empty-label">Sem resultados</div></div>';}
+
+// ============================================================
+// MENSAGENS
+// ============================================================
+function labelTipo(t){return{reclamacao:"Reclamação",elogio:"Elogio",sugestao:"Sugestão"}[t]||t;}
+function renderMsgs(){
+  var list=document.getElementById("msgs-list");
+  var data=MENSAGENS.filter(function(m){if(_msgFilter==="reclamacao")return m.tipo==="reclamacao";if(_msgFilter==="elogio")return m.tipo==="elogio";if(_msgFilter==="sugestao")return m.tipo==="sugestao";if(_msgFilter==="nao_lidas")return !m.lida;return true;});
+  if(!data.length){list.innerHTML='<div class="empty"><div class="empty-icon">💬</div><div class="empty-label">Nenhuma mensagem</div></div>';return;}
+  list.innerHTML=data.map(function(m){
+    return '<div class="msg-card '+m.tipo+' '+(m.lida?"":"unread")+'" onclick="openMsg(\''+m.id+'\')"><div class="msg-head">'+(!m.lida?'<div class="unread-dot"></div>':"")+
+    '<span class="msg-tipo '+m.tipo+'">'+labelTipo(m.tipo)+'</span>'+(m.linha?'<span class="tag teal" style="font-size:9px;">🚌 '+m.linha+'</span>':"")+
+    '<span class="msg-date">'+(m.data||"")+'</span></div><div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:3px;">'+(m.nome||"Anônimo")+'</div><div class="msg-body">'+(m.msg||m.mensagem||"")+'</div></div>';
+  }).join("");
+}
+function openMsg(id){
+  var m=MENSAGENS.find(function(x){return x.id===id;});if(!m)return;
+  _msgAtual=id;if(!m.lida){m.lida=true;if(_fbReady)marcarMsgLida(id);}
+  document.getElementById("modal-msg-body").innerHTML='<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;"><span class="msg-tipo '+m.tipo+'">'+labelTipo(m.tipo)+'</span>'+(m.linha?'<span class="tag teal">🚌 '+m.linha+'</span>':"")+'<span style="margin-left:auto;font-size:11px;color:var(--text3);">'+(m.data||"")+'</span></div><div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:10px;">'+(m.nome||"Anônimo")+'</div><div style="font-size:13px;color:var(--text2);line-height:1.7;padding:14px;background:var(--bg);border-radius:10px;border:1.5px solid var(--border);">'+(m.msg||m.mensagem||"")+'</div>';
+  document.getElementById("modal-msg").classList.remove("hidden");
+  renderMsgs();updateBadges();
+}
+async function deleteMsg(){try{if(_fbReady)await excluirMsgFirebase(_msgAtual);else MENSAGENS=MENSAGENS.filter(function(m){return m.id!==_msgAtual;});closeModal("modal-msg");renderMsgs();updateBadges();toast("🗑 Mensagem excluída","info");}catch(e){toast("❌ Erro","error");}}
+async function markAllRead(){try{if(_fbReady)await marcarTodasLidasFirebase();else MENSAGENS.forEach(function(m){m.lida=true;});renderMsgs();updateBadges();toast("✅ Todas marcadas como lidas","success");}catch(e){toast("❌ Erro","error");}}
+function filterMsgs(f,el){_msgFilter=f;document.querySelectorAll("#page-faleconosco .filter-btn").forEach(function(b){b.classList.remove("active");});if(el)el.classList.add("active");renderMsgs();}
+function searchMsgs(q){q=q.toLowerCase();if(!q){renderMsgs();return;}var data=MENSAGENS.filter(function(m){return (m.msg||m.mensagem||"").toLowerCase().includes(q)||(m.nome||"").toLowerCase().includes(q);});document.getElementById("msgs-list").innerHTML=data.map(function(m){return '<div class="msg-card '+m.tipo+' '+(m.lida?"":"unread")+'" onclick="openMsg(\''+m.id+'\')"><div class="msg-head"><span class="msg-tipo '+m.tipo+'">'+labelTipo(m.tipo)+'</span><span class="msg-date">'+(m.data||"")+'</span></div><div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:2px;">'+(m.nome||"")+'</div><div class="msg-body">'+(m.msg||m.mensagem||"")+'</div></div>';}).join("")||'<div class="empty"><div class="empty-icon">🔍</div><div class="empty-label">Sem resultados</div></div>';}
+
+// ============================================================
+// MODAL UTILS
+// ============================================================
+function closeModal(id){document.getElementById(id).classList.add("hidden");if(id==="modal-mapa"&&_mapL){_mapL.remove();_mapL=null;}}
+document.querySelectorAll(".modal-overlay").forEach(function(o){o.addEventListener("click",function(e){if(e.target===this)closeModal(this.id);});});
+
+// ============================================================
+// TOAST
+// ============================================================
+function toast(msg,type){type=type||"info";var w=document.getElementById("toasts");var t=document.createElement("div");t.className="toast "+type;t.innerHTML=msg;w.appendChild(t);requestAnimationFrame(function(){t.classList.add("show");});setTimeout(function(){t.classList.remove("show");setTimeout(function(){t.remove();},400);},3200);}
+
+// ============================================================
+// FIREBASE
+// ============================================================
+function waitFb(cb){if(_fbReady){cb();return;}window.addEventListener("firebaseReady",function(){_fbReady=true;cb();},{once:true});}
+
+function setOnlineStatus(ok){
+  var dot=document.querySelector(".online-dot");var span=document.querySelector(".sidebar-footer span");
+  if(ok){dot.style.background="var(--green)";span.textContent="Firebase conectado · v2.0";}
+  else{dot.style.background="var(--red)";span.textContent="Sem conexão · v2.0";}
+}
+
+function iniciarListenerLinhas(){
+  var fb=window._fb;
+  fb.onSnapshot(fb.collection(fb.db,"linhas"),async function(snap){
+    var promises=snap.docs.map(async function(d){
+      var linhaData={id:d.id,...d.data(),viagens:{ida:{horarios:{}},volta:{horarios:{}}}};
+      try{var viagensSnap=await fb.getDocs(fb.collection(fb.db,"linhas",d.id,"viagens"));viagensSnap.forEach(function(v){linhaData.viagens[v.id]={id:v.id,...v.data()};});}catch(e){}
+      return linhaData;
+    });
+    LINHAS=await Promise.all(promises);
+    renderLinhas();updateBadges();populateLinhaSelect();
+  },function(err){console.error(err);setOnlineStatus(false);});
+}
+
+function iniciarListenerAlertas(){
+  var fb=window._fb;
+  fb.onSnapshot(fb.collection(fb.db,"alertas"),function(snap){
+    ALERTAS=[];snap.forEach(function(d){ALERTAS.push({id:d.id,...d.data()});});
+    ALERTAS.sort(function(a,b){return (b.criadoEm||0)-(a.criadoEm||0);});
+    renderAlertasPage();updateBadges();
+  });
+}
+
+function iniciarListenerMensagens(){
+  var fb=window._fb;
+  fb.onSnapshot(fb.collection(fb.db,"mensagens"),function(snap){
+    MENSAGENS=[];snap.forEach(function(d){MENSAGENS.push({id:d.id,...d.data()});});
+    MENSAGENS.sort(function(a,b){return (b.dataEnvio||0)-(a.dataEnvio||0);});
+    renderMsgs();updateBadges();
+  });
+}
+
+async function salvarLinhaFirebase(obj,idExistente){
+  var fb=window._fb;
+  var docData={nome:obj.nome,tarifa:parseFloat(obj.tarifa)||0,status:obj.status||"ativo",atualizadoEm:fb.serverTimestamp()};
+  if(!idExistente)docData.criadoEm=fb.serverTimestamp();
+  var linhaId;
+  if(idExistente){await fb.updateDoc(fb.doc(fb.db,"linhas",idExistente),docData);linhaId=idExistente;}
+  else{var linhaRef=await fb.addDoc(fb.collection(fb.db,"linhas"),docData);linhaId=linhaRef.id;}
+  for(var s of ["ida","volta"]){
+    var v=obj.viagens[s];var kmlUrl=v.kmlUrl||"";
+    if(v.kmlData&&v.kmlNome){
+      toast("⬆️ Enviando KML "+s+"...","info");
+      var blob=new Blob([v.kmlData],{type:"application/vnd.google-earth.kml+xml"});
+      var storageRef=fb.ref(fb.storage,"kml/"+linhaId+"/"+s+"-"+v.kmlNome);
+      await fb.uploadBytes(storageRef,blob);kmlUrl=await fb.getDownloadURL(storageRef);
+    }
+    // Salva horários — faz upload de KMLs especiais se houver
+    var horariosSalvar={};
+    for(var periodo of ["seg-sex","sabado","domingo"]){
+      var hrs=v.horarios[periodo]||[];
+      var hrsSalvas=[];
+      for(var hi=0;hi<hrs.length;hi++){
+        var h=hrs[hi];
+        var hSalvo={hora:h.hora,obs:h.obs||""};
+        // Upload KML especial se tiver arquivo novo
+        if(h.kmlData&&h.kmlNome){
+          toast("⬆️ KML especial "+h.hora+"...","info");
+          var blobH=new Blob([h.kmlData],{type:"application/vnd.google-earth.kml+xml"});
+          var sRefH=fb.ref(fb.storage,"kml/"+linhaId+"/"+s+"-"+periodo+"-"+h.hora.replace(":","h")+"-"+h.kmlNome);
+          await fb.uploadBytes(sRefH,blobH);
+          hSalvo.kmlUrl=await fb.getDownloadURL(sRefH);
+          hSalvo.kmlNome=h.kmlNome;
+        } else if(h.kmlUrl){
+          hSalvo.kmlUrl=h.kmlUrl;
+          hSalvo.kmlNome=h.kmlNome||"";
+        }
+        hrsSalvas.push(hSalvo);
+      }
+      horariosSalvar[periodo]=hrsSalvas;
+    }
+    await fb.setDoc(fb.doc(fb.db,"linhas",linhaId,"viagens",s),{
+      sentido:v.sentido,sentidoLabel:v.sentidoLabel||"",duracao:v.duracao||"",
+      telemetria:v.telemetria||"",distancia:v.distancia||null,
+      kmlNome:v.kmlNome||"",kmlUrl:kmlUrl,
+      horarios:horariosSalvar
+    });
+  }
+  return linhaId;
+}
+
+async function excluirLinhaFirebase(id){
+  var fb=window._fb;
+  for(var s of ["ida","volta"]){try{var l=LINHAS.find(function(x){return x.id===id;});if(l&&l.viagens&&l.viagens[s]&&l.viagens[s].kmlNome){var sr=fb.ref(fb.storage,"kml/"+id+"/"+s+"-"+l.viagens[s].kmlNome);await fb.deleteObject(sr);}}catch(e){}}
+  await fb.deleteDoc(fb.doc(fb.db,"linhas",id));
+}
+
+async function salvarAlertaFirebase(obj){var fb=window._fb;var docData={tipo:obj.tipo,titulo:obj.titulo,corpo:obj.corpo,status:obj.status,linha:obj.linha||"",criadoEm:fb.serverTimestamp()};if(obj.dataAgendada)docData.dataAgendada=obj.dataAgendada;await fb.addDoc(fb.collection(fb.db,"alertas"),docData);}
+async function updateAlertaStatus(id,status){var fb=window._fb;await fb.updateDoc(fb.doc(fb.db,"alertas",id),{status});}
+async function excluirAlertaFirebase(id){var fb=window._fb;await fb.deleteDoc(fb.doc(fb.db,"alertas",id));}
+async function marcarMsgLida(id){var fb=window._fb;await fb.updateDoc(fb.doc(fb.db,"mensagens",id),{lida:true});}
+async function excluirMsgFirebase(id){var fb=window._fb;await fb.deleteDoc(fb.doc(fb.db,"mensagens",id));}
+async function marcarTodasLidasFirebase(){var fb=window._fb;for(var m of MENSAGENS.filter(function(x){return !x.lida;})){await fb.updateDoc(fb.doc(fb.db,"mensagens",m.id),{lida:true});}}
+
+// ============================================================
+// INIT
+// ============================================================
+(function(){
+  updateBadges();populateLinhaSelect();
+  navTo("linhas",document.querySelectorAll(".nav-item")[0]);
+  waitFb(function(){
+    setOnlineStatus(true);
+    toast("🔥 Firebase conectado!","success");
+    iniciarListenerLinhas();
+    iniciarListenerAlertas();
+    iniciarListenerMensagens();
+  });
+})();
+</script>
+</body>
+</html>
