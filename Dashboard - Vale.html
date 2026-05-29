@@ -833,7 +833,6 @@ function renderKPIs(months,cmp){
       {label:'Viagens avulsas',val:fmt(k.avu_total),sub:`KM avulsas: <b>${kmFmt(k.avu_km)}</b>`,extra:k.total_geral>0?Math.round(k.avu_total/k.total_geral*100)+'% do total':'—',cls:'purple'},
       // 4-6) operacionais (base: programadas)
       {label:'Com justificativa',val:fmt(k.com_obs),sub:k.perc_obs+'% das programadas',extra:'',cls:'amber'},
-      {label:'Sem observação',val:fmt(k.sem_obs),sub:'Viagens conformes',extra:'',cls:'green'},
       {label:'Variação >5% km',val:fmt(k.var5),sub:k.perc_var5+'% das programadas',extra:'',cls:'red'},
     ];
     document.getElementById('kpis').innerHTML=cards.map(c=>`<div class="kpi ${c.cls}"><div class="kpi-label">${c.label}</div><div class="kpi-val">${c.val}</div><div class="kpi-sub">${c.sub}</div>${c.extra?`<div class="kpi-extra">${c.extra}</div>`:''}</div>`).join('');
@@ -866,7 +865,6 @@ function renderKPIs(months,cmp){
       mkKpi('Viagens programadas',      k1.prog_total,  k2.prog_total,  'teal',   kmLine(k1.prog_km,  k2.prog_km)) +
       mkKpi('Viagens avulsas',          k1.avu_total,   k2.avu_total,   'purple', kmLine(k1.avu_km,   k2.avu_km)) +
       mkKpi('Com justificativa',        k1.com_obs,     k2.com_obs,     'amber',  '') +
-      mkKpi('Sem observação',           k1.sem_obs,     k2.sem_obs,     'green',  '') +
       mkKpi('Variação >5% km',          k1.var5,        k2.var5,        'red',    '');
   }
 }
