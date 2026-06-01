@@ -1032,15 +1032,40 @@ function renderRankSingle(listId,items,nameKey,label,color,total,tripsMap,xrefMa
 }
 
 function renderRankCompare(listId,items1,items2,nameKey,label,t1,t2,months,D1,D2,tripsKey,catKey,filterCat){
+  const xrefKey=nameKey==='frota'?'frota_xref':nameKey==='moto'?'moto_xref':'linha_xref';
   const allNames=[...new Set([...items1.map(i=>i[nameKey]),...items2.map(i=>i[nameKey])])].slice(0,15);
   const maxN=Math.max(...allNames.map(name=>{const n1=items1.find(i=>i[nameKey]===name)?.n||0;const n2=items2.find(i=>i[nameKey]===name)?.n||0;return Math.max(n1,n2);}),1);
-  RANK_DATA[listId]={items:allNames.map(name=>({[nameKey]:name})),nameKey,tripsMap:{},label,cols:[]};
+
+  // Merge xref maps from both months
+  const mergedXRef={};
+  const subKeys=nameKey==='frota'?['motos','linhas']:nameKey==='moto'?['frotas','linhas']:['frotas','motos'];
+  for(const name of allNames){
+    const x1=(D1[xrefKey]&&D1[xrefKey][name])||{};
+    const x2=(D2[xrefKey]&&D2[xrefKey][name])||{};
+    const merged={};
+    for(const sk of subKeys){
+      const m={};
+      for(const [k,v] of Object.entries(x1[sk]||{})) m[k]=(m[k]||0)+v;
+      for(const [k,v] of Object.entries(x2[sk]||{})) m[k]=(m[k]||0)+v;
+      merged[sk]=m;
+    }
+    mergedXRef[name]=merged;
+  }
+  const combinedN={};
+  for(const name of allNames){
+    combinedN[name]=(items1.find(i=>i[nameKey]===name)?.n||0)+(items2.find(i=>i[nameKey]===name)?.n||0);
+  }
+  RANK_DATA[listId]={
+    items:allNames.map(name=>({[nameKey]:name,n:combinedN[name]})),
+    nameKey,label,xrefMap:mergedXRef
+  };
   document.getElementById(listId).innerHTML=allNames.map((name,i)=>{
     const n1=items1.find(it=>it[nameKey]===name)?.n||0, n2=items2.find(it=>it[nameKey]===name)?.n||0;
     const p1=t1>0?Math.round(n1/t1*1000)/10:0, p2=t2>0?Math.round(n2/t2*1000)/10:0;
     const bw1=Math.round(n1/maxN*100), bw2=Math.round(n2/maxN*100);
     const short=name.length>18?name.slice(0,17)+'…':name;
-    return `<div class="rank-cmp"><div class="rank-cmp-name" title="${name}">${short}</div>
+    return `<div class="rank-cmp clickable" onclick="handleRankClick('${listId}',${i})" style="cursor:pointer;border-radius:8px;padding:4px 6px;margin:-4px -6px;transition:.15s" onmouseover="this.style.background='var(--teal-light)'" onmouseout="this.style.background=''">
+      <div class="rank-cmp-name" title="${name}">${short}</div>
       <div class="rank-bars">
         <div class="rank-bar-row"><span style="color:${C1};width:32px;font-size:10px">${months[0].label}</span><div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${bw1}%;background:${C1}"></div></div><span class="rank-bar-val" style="color:${C1}">${p1}% · ${n1}</span></div>
         <div class="rank-bar-row"><span style="color:${C2};width:32px;font-size:10px">${months[1].label}</span><div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${bw2}%;background:${C2}"></div></div><span class="rank-bar-val" style="color:${C2}">${p2}% · ${n2}</span></div>
@@ -1048,6 +1073,7 @@ function renderRankCompare(listId,items1,items2,nameKey,label,t1,t2,months,D1,D2
     </div>`;
   }).join('');
 }
+
 
 function sortedEntries(obj,topN){
   return Object.entries(obj).sort((a,b)=>b[1]-a[1]).slice(0,topN||10);
