@@ -583,6 +583,12 @@ function buildDataset(trips, avulsas){
   const frotaTrips={},motoTrips={},linhaTrips={};
   const daily={};
 
+  // BI cross-reference maps
+  // frota → { motos: {moto:count}, linhas: {linha:count} }
+  // moto  → { frotas: {frota:count}, linhas: {linha:count} }
+  // linha → { frotas: {frota:count}, motos: {moto:count} }
+  const frotaXRef={}, motoXRef={}, linhaXRef={};
+
   for(const t of trips){
     const d=t.data;
     if(!daily[d])daily[d]={total:0,obs:0,var5:0,gps:0};
@@ -593,23 +599,37 @@ function buildDataset(trips, avulsas){
   }
   for(const t of com_obs){
     catCnt[t.cat]=(catCnt[t.cat]||0)+1;
-    if(t.frota!=='N/A'){
-      frotaCnt[t.frota]=(frotaCnt[t.frota]||0)+1;
+    const fr=t.frota!=='N/A'?t.frota:null;
+    const mo=t.moto&&t.moto!=='N/A'?t.moto:null;
+    const li=t.linha||null;
+
+    if(fr){
+      frotaCnt[fr]=(frotaCnt[fr]||0)+1;
       if(!catFrotas[t.cat])catFrotas[t.cat]={};
-      catFrotas[t.cat][t.frota]=(catFrotas[t.cat][t.frota]||0)+1;
-      if(!frotaTrips[t.frota])frotaTrips[t.frota]=[];
-      if(frotaTrips[t.frota].length<30)frotaTrips[t.frota].push({data:t.data,motorista:t.moto,linha:t.linha,variacao:t.variacao,cat:t.cat,resumo:t.resumo});
+      catFrotas[t.cat][fr]=(catFrotas[t.cat][fr]||0)+1;
+      if(!frotaTrips[fr])frotaTrips[fr]=[];
+      if(!frotaXRef[fr])frotaXRef[fr]={motos:{},linhas:{}};
+      if(mo)frotaXRef[fr].motos[mo]=(frotaXRef[fr].motos[mo]||0)+1;
+      if(li)frotaXRef[fr].linhas[li]=(frotaXRef[fr].linhas[li]||0)+1;
     }
-    motoCnt[t.moto]=(motoCnt[t.moto]||0)+1;
-    if(!catMotos[t.cat])catMotos[t.cat]={};
-    catMotos[t.cat][t.moto]=(catMotos[t.cat][t.moto]||0)+1;
-    if(!motoTrips[t.moto])motoTrips[t.moto]=[];
-    if(motoTrips[t.moto].length<30)motoTrips[t.moto].push({data:t.data,frota:t.frota,linha:t.linha,variacao:t.variacao,cat:t.cat,resumo:t.resumo});
-    linhaCnt[t.linha]=(linhaCnt[t.linha]||0)+1;
-    if(!catLinhas[t.cat])catLinhas[t.cat]={};
-    catLinhas[t.cat][t.linha]=(catLinhas[t.cat][t.linha]||0)+1;
-    if(!linhaTrips[t.linha])linhaTrips[t.linha]=[];
-    if(linhaTrips[t.linha].length<30)linhaTrips[t.linha].push({data:t.data,frota:t.frota,motorista:t.moto,variacao:t.variacao,cat:t.cat,resumo:t.resumo});
+    if(mo){
+      motoCnt[mo]=(motoCnt[mo]||0)+1;
+      if(!catMotos[t.cat])catMotos[t.cat]={};
+      catMotos[t.cat][mo]=(catMotos[t.cat][mo]||0)+1;
+      if(!motoTrips[mo])motoTrips[mo]=[];
+      if(!motoXRef[mo])motoXRef[mo]={frotas:{},linhas:{}};
+      if(fr)motoXRef[mo].frotas[fr]=(motoXRef[mo].frotas[fr]||0)+1;
+      if(li)motoXRef[mo].linhas[li]=(motoXRef[mo].linhas[li]||0)+1;
+    }
+    if(li){
+      linhaCnt[li]=(linhaCnt[li]||0)+1;
+      if(!catLinhas[t.cat])catLinhas[t.cat]={};
+      catLinhas[t.cat][li]=(catLinhas[t.cat][li]||0)+1;
+      if(!linhaTrips[li])linhaTrips[li]=[];
+      if(!linhaXRef[li])linhaXRef[li]={frotas:{},motos:{}};
+      if(fr)linhaXRef[li].frotas[fr]=(linhaXRef[li].frotas[fr]||0)+1;
+      if(mo)linhaXRef[li].motos[mo]=(linhaXRef[li].motos[mo]||0)+1;
+    }
   }
   const frotaVar={};
   for(const t of var5){if(t.frota==='N/A')continue;if(!frotaVar[t.frota])frotaVar[t.frota]=[];frotaVar[t.frota].push(Math.abs(t.variacao));}
@@ -625,7 +645,10 @@ function buildDataset(trips, avulsas){
     frota_trips:frotaTrips,moto_trips:motoTrips,linha_trips:linhaTrips,
     cat_frotas:Object.fromEntries(Object.entries(catFrotas).map(([cat,obj])=>[cat,Object.entries(obj).sort((a,b)=>b[1]-a[1]).slice(0,15).map(([frota,n])=>({frota,n}))])),
     cat_motos:Object.fromEntries(Object.entries(catMotos).map(([cat,obj])=>[cat,Object.entries(obj).sort((a,b)=>b[1]-a[1]).slice(0,15).map(([moto,n])=>({moto,n}))])),
-    cat_linhas:Object.fromEntries(Object.entries(catLinhas).map(([cat,obj])=>[cat,Object.entries(obj).sort((a,b)=>b[1]-a[1]).slice(0,15).map(([linha,n])=>({linha,n}))]))
+    cat_linhas:Object.fromEntries(Object.entries(catLinhas).map(([cat,obj])=>[cat,Object.entries(obj).sort((a,b)=>b[1]-a[1]).slice(0,15).map(([linha,n])=>({linha,n}))])),
+    frota_xref:frotaXRef,
+    moto_xref:motoXRef,
+    linha_xref:linhaXRef
   };
   return {ds,fv};
 }
@@ -973,9 +996,9 @@ function applyFilter(months,cmp){
 
 function renderRanks(months,cmp,filterCat){
   const configs=[
-    {listId:'frotaList',nameKey:'frota',label:'Frota',color:C1A,colorAlt:C2A,topKey:'top_frotas',tripsKey:'frota_trips',catKey:'cat_frotas'},
-    {listId:'motoList',nameKey:'moto',label:'Motorista',color:'rgba(167,139,250,.72)',colorAlt:'rgba(167,139,250,.5)',topKey:'top_motoristas',tripsKey:'moto_trips',catKey:'cat_motos'},
-    {listId:'linhaList',nameKey:'linha',label:'Linha',color:'rgba(45,212,191,.72)',colorAlt:'rgba(45,212,191,.5)',topKey:'top_linhas',tripsKey:'linha_trips',catKey:'cat_linhas'},
+    {listId:'frotaList',nameKey:'frota',label:'Frota',color:C1A,colorAlt:C2A,topKey:'top_frotas',tripsKey:'frota_trips',catKey:'cat_frotas',xrefKey:'frota_xref'},
+    {listId:'motoList',nameKey:'moto',label:'Motorista',color:'rgba(167,139,250,.72)',colorAlt:'rgba(167,139,250,.5)',topKey:'top_motoristas',tripsKey:'moto_trips',catKey:'cat_motos',xrefKey:'moto_xref'},
+    {listId:'linhaList',nameKey:'linha',label:'Linha',color:'rgba(45,212,191,.72)',colorAlt:'rgba(45,212,191,.5)',topKey:'top_linhas',tripsKey:'linha_trips',catKey:'cat_linhas',xrefKey:'linha_xref'},
   ];
   for(const cfg of configs){
     if(!cmp){
@@ -985,7 +1008,7 @@ function renderRanks(months,cmp,filterCat){
       const tripsMap=filterCat
         ?Object.fromEntries((D[cfg.catKey][filterCat]||[]).map(it=>[it[cfg.nameKey],(D[cfg.tripsKey][it[cfg.nameKey]]||[]).filter(t=>t.cat===filterCat)]))
         :D[cfg.tripsKey];
-      renderRankSingle(cfg.listId,items,cfg.nameKey,cfg.label,cfg.color,total,tripsMap);
+      renderRankSingle(cfg.listId,items,cfg.nameKey,cfg.label,cfg.color,total,tripsMap,D[cfg.xrefKey]);
     } else {
       const [D1,D2]=[months[0].ds,months[1].ds];
       const items1=filterCat?(D1[cfg.catKey][filterCat]||[]):D1[cfg.topKey];
@@ -997,8 +1020,8 @@ function renderRanks(months,cmp,filterCat){
   }
 }
 
-function renderRankSingle(listId,items,nameKey,label,color,total,tripsMap){
-  RANK_DATA[listId]={items,nameKey,tripsMap,label,cols:[{key:'data',label:'Data'},{key:'motorista'in(items[0]||{})?'motorista':'frota',label:'Motorista/Frota'},{key:'linha',label:'Linha'},{key:'variacao',label:'Var %'},{key:'cat',label:'Tipo'},{key:'resumo',label:'Justificativa (resumo)'}]};
+function renderRankSingle(listId,items,nameKey,label,color,total,tripsMap,xrefMap){
+  RANK_DATA[listId]={items,nameKey,label,color,total,xrefMap:xrefMap||{}};
   const max=items[0]?.n||1;
   document.getElementById(listId).innerHTML=!items.length
     ?`<div style="color:var(--muted);font-size:12px;padding:8px">Nenhum registro.</div>`
@@ -1026,21 +1049,73 @@ function renderRankCompare(listId,items1,items2,nameKey,label,t1,t2,months,D1,D2
   }).join('');
 }
 
-function handleRankClick(listId,idx){
-  const cfg=RANK_DATA[listId];if(!cfg||!cfg.cols.length)return;
-  const item=cfg.items[idx],name=item[cfg.nameKey];
-  const trips=cfg.tripsMap[name]||[];
-  const suffix=activeCat?` · ${activeCat}`:'';
-  showDrill(`${cfg.label}: ${name} — ${trips.length} viagem(ns)${suffix}`,trips,cfg.cols);
+function sortedEntries(obj,topN){
+  return Object.entries(obj).sort((a,b)=>b[1]-a[1]).slice(0,topN||10);
 }
 
-function showDrill(title,rows,cols){
+function handleRankClick(listId,idx){
+  const cfg=RANK_DATA[listId];
+  if(!cfg)return;
+  const item=cfg.items[idx];
+  const name=item[cfg.nameKey];
+  const xref=cfg.xrefMap&&cfg.xrefMap[name];
+
+  // BI drill-down: show cross-reference summary
+  if(listId==='frotaList'){
+    // Frota → motoristas e linhas que mais rodaram nesse carro (com justificativa)
+    const motos=xref?sortedEntries(xref.motos,10):[];
+    const linhas=xref?sortedEntries(xref.linhas,10):[];
+    showBIDrill(`Frota ${name} — ${item.n} justificativa(s)`, [
+      {title:'🧑‍✈️ Motoristas com mais justificativas nessa frota', rows:motos, label:'Motorista'},
+      {title:'🗺️ Linhas com mais justificativas nessa frota', rows:linhas, label:'Linha'}
+    ], item.n);
+  } else if(listId==='motoList'){
+    // Motorista → linhas que mais rodou e carros que mais usou
+    const linhas=xref?sortedEntries(xref.linhas,10):[];
+    const frotas=xref?sortedEntries(xref.frotas,10):[];
+    showBIDrill(`Motorista: ${name} — ${item.n} justificativa(s)`, [
+      {title:'🚌 Carros mais utilizados por este motorista', rows:frotas, label:'Frota'},
+      {title:'🗺️ Linhas com mais justificativas deste motorista', rows:linhas, label:'Linha'}
+    ], item.n);
+  } else if(listId==='linhaList'){
+    // Linha → carros e motoristas com mais justificativas
+    const frotas=xref?sortedEntries(xref.frotas,10):[];
+    const motos=xref?sortedEntries(xref.motos,10):[];
+    showBIDrill(`Linha: ${name} — ${item.n} justificativa(s)`, [
+      {title:'🚌 Frotas com mais justificativas nessa linha', rows:frotas, label:'Frota'},
+      {title:'🧑‍✈️ Motoristas com mais justificativas nessa linha', rows:motos, label:'Motorista'}
+    ], item.n);
+  }
+}
+
+function showBIDrill(title, sections, totalRef){
   document.getElementById('drillTitle').textContent=title;
-  const thead=`<tr>${cols.map(c=>`<th>${c.label}</th>`).join('')}</tr>`;
-  const tbody=rows.length
-    ?rows.map(r=>`<tr>${cols.map(c=>{const v=r[c.key];if(c.key==='cat')return`<td>${catBadge(v)}</td>`;if(c.key==='variacao')return`<td class="${varCls(v)}">${v>0?'+':''}${v}%</td>`;return`<td>${v??'-'}</td>`;}).join('')}</tr>`).join('')
-    :`<tr><td colspan="${cols.length}" style="color:var(--muted);text-align:center;padding:16px">Nenhuma viagem encontrada</td></tr>`;
-  document.getElementById('drillContent').innerHTML=`<table><thead>${thead}</thead><tbody>${tbody}</tbody></table>`;
+  const fmt=n=>Number(n).toLocaleString('pt-BR');
+  let html='';
+  for(const sec of sections){
+    const maxN=sec.rows.length?sec.rows[0][1]:1;
+    html+=`<div style="margin-bottom:20px">
+      <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px">${sec.title}</div>`;
+    if(!sec.rows.length){
+      html+=`<div style="font-size:12px;color:var(--muted);padding:6px 0">Nenhum registro.</div>`;
+    } else {
+      html+=`<div style="display:flex;flex-direction:column;gap:7px">`;
+      sec.rows.forEach(([key,n],i)=>{
+        const pct=totalRef>0?Math.round(n/totalRef*100):0;
+        const bw=Math.round(n/maxN*100);
+        const bar_color=sec.label==='Frota'?'rgba(0,188,212,.7)':sec.label==='Motorista'?'rgba(167,139,250,.75)':'rgba(45,212,191,.75)';
+        html+=`<div style="display:grid;grid-template-columns:160px 1fr 44px 36px;align-items:center;gap:8px">
+          <div style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${key}">${i+1}. ${key.length>20?key.slice(0,19)+'…':key}</div>
+          <div style="background:var(--border-light);border-radius:4px;height:8px;overflow:hidden"><div style="width:${bw}%;height:100%;background:${bar_color};border-radius:4px;transition:.4s"></div></div>
+          <div style="font-size:12px;font-weight:800;text-align:right;color:${bar_color}">${pct}%</div>
+          <div style="font-size:11px;font-weight:600;text-align:right;color:var(--muted)">${fmt(n)}</div>
+        </div>`;
+      });
+      html+=`</div>`;
+    }
+    html+=`</div>`;
+  }
+  document.getElementById('drillContent').innerHTML=html;
   const p=document.getElementById('drillPanel');
   p.classList.add('active');
   setTimeout(()=>p.scrollIntoView({behavior:'smooth',block:'nearest'}),60);
