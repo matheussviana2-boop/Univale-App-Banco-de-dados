@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Telemetria · Excesso de Acelerador</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#0B0E14;
+  --bg2:#0E1320;
+  --panel:#121824;
+  --panel2:#1A2233;
+  --border:#222C40;
+  --border2:#2E3A52;
+  --ink:#E9EDF4;
+  --muted:#A3ADBF;
+  --faint:#8E99AE;
+  --amber:#F5A524;
+  --teal:#2DD4BF;
+  --blue:#60A5FA;
+  --crimson:#F43F5E;
+  --orange:#FB923C;
+  --green:#34D399;
+  --display:'Space Grotesk',sans-serif;
+  --body:'Inter',sans-serif;
+  --mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0;
+  font-family:var(--body);
+  background:
+    radial-gradient(1200px 500px at 80% -10%, rgba(245,165,36,.05), transparent 60%),
+    radial-gradient(900px 400px at 10% 0%, rgba(45,212,191,.04), transparent 55%),
+    var(--bg);
+  color:var(--ink);
+  font-size:14px;
+  line-height:1.5;
+}
+::-webkit-scrollbar{width:10px;height:10px;}
+::-webkit-scrollbar-track{background:var(--bg2);}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:5px;}
+::-webkit-scrollbar-thumb:hover{background:var(--faint);}
+
+/* ===== topbar ===== */
+.topbar{
+  position:sticky;top:0;z-index:50;
+  backdrop-filter:blur(14px);
+  background:rgba(11,14,20,.82);
+  border-bottom:1px solid var(--border);
+  padding:14px 32px;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+}
+.brand{display:flex;align-items:center;gap:14px;}
+.brand .pulse{
+  width:10px;height:10px;border-radius:50%;
+  background:var(--teal);
+  box-shadow:0 0 0 0 rgba(45,212,191,.5);
+  animation:pulse 2.4s infinite;
+}
+@keyframes pulse{
+  0%{box-shadow:0 0 0 0 rgba(45,212,191,.45);}
+  70%{box-shadow:0 0 0 9px rgba(45,212,191,0);}
+  100%{box-shadow:0 0 0 0 rgba(45,212,191,0);}
+}
+.brand h1{
+  font-family:var(--display);
+  font-size:17px;font-weight:600;margin:0;letter-spacing:.2px;
+}
+.brand .eyebrow{
+  font-family:var(--mono);font-size:10px;letter-spacing:2.5px;
+  text-transform:uppercase;color:var(--amber);display:block;margin-bottom:1px;
+}
+.period-chip{
+  font-family:var(--mono);font-size:11px;color:var(--muted);
+  border:1px solid var(--border);border-radius:99px;
+  padding:6px 14px;background:var(--panel);
+}
+.upload-area{display:flex;align-items:center;gap:10px;}
+.file-label{
+  display:inline-flex;align-items:center;gap:8px;
+  background:linear-gradient(135deg,var(--amber),#e08c00);
+  color:#1A1000;font-weight:600;font-size:13px;
+  padding:9px 18px;border-radius:8px;cursor:pointer;
+  transition:transform .15s ease, box-shadow .15s ease;
+  box-shadow:0 4px 14px rgba(245,165,36,.25);
+}
+.file-label:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(245,165,36,.35);}
+.file-label input{display:none;}
+.btn-ghost{
+  background:transparent;color:var(--muted);border:1px solid var(--border);
+  padding:9px 16px;border-radius:8px;font-size:13px;cursor:pointer;
+  transition:border-color .15s, color .15s;
+  font-family:var(--body);
+}
+.btn-ghost:hover{border-color:var(--border2);color:var(--ink);}
+
+.container{padding:32px 32px 80px;max-width:1480px;margin:0 auto;}
+
+/* ===== empty state ===== */
+.empty-state{
+  text-align:center;padding:110px 24px;color:var(--muted);
+  animation:fadeUp .5s ease both;
+}
+.empty-state .gauge-icon{
+  font-family:var(--mono);font-size:46px;color:var(--amber);
+  display:block;margin-bottom:18px;opacity:.85;
+}
+.empty-state h2{font-family:var(--display);color:var(--ink);font-size:22px;margin:0 0 8px;}
+.empty-state p{max-width:520px;margin:0 auto;font-size:13.5px;}
+.hidden{display:none !important;}
+
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(14px);}
+  to{opacity:1;transform:translateY(0);}
+}
+.reveal{animation:fadeUp .55s ease both;}
+.reveal-d1{animation-delay:.06s;}
+.reveal-d2{animation-delay:.12s;}
+.reveal-d3{animation-delay:.18s;}
+@media (prefers-reduced-motion: reduce){
+  *{animation:none !important;transition:none !important;}
+}
+
+/* ===== hero diagnosis ===== */
+.hero{
+  border:1px solid var(--border);
+  border-radius:18px;
+  background:linear-gradient(160deg, rgba(245,165,36,.06), rgba(18,24,36,.4) 45%), var(--panel);
+  padding:30px 34px;
+  margin-bottom:30px;
+  display:grid;grid-template-columns:1.5fr 1fr;gap:34px;align-items:center;
+  position:relative;overflow:hidden;
+}
+.hero::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(600px 200px at 0% 0%, rgba(45,212,191,.05), transparent 60%);
+}
+@media (max-width:980px){.hero{grid-template-columns:1fr;}}
+.hero .eyebrow{
+  font-family:var(--mono);font-size:10px;letter-spacing:3px;text-transform:uppercase;
+  color:var(--amber);margin-bottom:10px;
+}
+.hero h2{
+  font-family:var(--display);font-size:26px;font-weight:600;line-height:1.25;
+  margin:0 0 14px;letter-spacing:-.2px;
+}
+.hero h2 .hl{color:var(--amber);}
+.hero p{color:var(--muted);font-size:13.5px;margin:0;max-width:620px;}
+.hero p b{color:var(--ink);font-weight:600;}
+.hero p .tag{color:var(--teal);font-weight:600;font-family:var(--mono);font-size:12.5px;}
+.gauge-wrap{position:relative;height:265px;}
+.gauge-center{
+  position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  pointer-events:none;text-align:center;
+  padding-bottom:52px; /* compensa a legenda abaixo do anel */
+}
+.gauge-center .big{
+  font-family:var(--display);font-size:36px;font-weight:700;line-height:1;
+  background:linear-gradient(135deg,var(--teal),var(--blue));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.gauge-center .lbl{
+  font-size:9.5px;color:var(--muted);margin-top:5px;
+  text-transform:uppercase;letter-spacing:.8px;
+  max-width:110px;line-height:1.4;
+}
+
+/* ===== filters ===== */
+.filters{
+  display:flex;gap:14px;flex-wrap:wrap;margin-bottom:28px;align-items:flex-end;
+}
+.field{display:flex;flex-direction:column;gap:5px;}
+.field label{
+  font-family:var(--mono);font-size:10px;color:var(--faint);
+  text-transform:uppercase;letter-spacing:1.8px;
+}
+.field select{
+  background:var(--panel);border:1px solid var(--border);color:var(--ink);
+  border-radius:8px;padding:9px 12px;font-size:13px;min-width:220px;
+  font-family:var(--body);
+  transition:border-color .15s;
+}
+.field select:hover{border-color:var(--border2);}
+.field select:focus{outline:2px solid rgba(245,165,36,.4);outline-offset:1px;border-color:var(--amber);}
+.btn-apply{
+  background:var(--panel2);color:var(--ink);border:1px solid var(--border2);
+  padding:9px 20px;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;
+  font-family:var(--body);transition:all .15s;
+}
+.btn-apply:hover{border-color:var(--amber);color:var(--amber);}
+
+/* ===== KPIs ===== */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:30px;}
+.kpi{
+  background:var(--panel);border:1px solid var(--border);border-radius:14px;
+  padding:18px 20px;position:relative;overflow:hidden;
+  transition:transform .18s ease, border-color .18s ease;
+}
+.kpi:hover{transform:translateY(-2px);border-color:var(--border2);}
+.kpi::after{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--kpi-accent,var(--border2)),transparent);
+  opacity:.7;
+}
+.kpi .label{
+  font-family:var(--mono);font-size:10px;color:var(--faint);
+  text-transform:uppercase;letter-spacing:1.6px;margin-bottom:8px;
+}
+.kpi .value{
+  font-family:var(--display);font-size:30px;font-weight:700;letter-spacing:-.5px;
+  color:var(--kpi-color,var(--ink));
+}
+.kpi .unit{font-size:14px;font-weight:500;color:var(--muted);margin-left:3px;}
+
+/* ===== sections / panels ===== */
+.section-head{
+  display:flex;align-items:baseline;gap:14px;
+  margin:44px 0 16px;padding-bottom:10px;
+  border-bottom:1px solid var(--border);
+}
+.section-head .num{
+  font-family:var(--mono);font-size:11px;color:var(--amber);letter-spacing:1px;
+}
+.section-head h2{
+  font-family:var(--display);font-size:17px;font-weight:600;margin:0;letter-spacing:.2px;
+}
+.section-head .hint{font-size:12px;color:var(--faint);margin-left:auto;}
+
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:20px;}
+@media (max-width:980px){.grid-2{grid-template-columns:1fr;}}
+
+.panel{
+  background:var(--panel);border:1px solid var(--border);border-radius:14px;
+  padding:20px 22px;
+  transition:border-color .18s ease;
+}
+.panel:hover{border-color:var(--border2);}
+.panel h3{font-family:var(--display);margin:0 0 4px;font-size:14.5px;font-weight:600;}
+.panel .desc{font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.55;}
+.chart-wrap{position:relative;width:100%;}
+
+/* ===== tables ===== */
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--border);}
+th{
+  font-family:var(--mono);color:var(--faint);font-weight:600;font-size:10px;
+  text-transform:uppercase;letter-spacing:1.2px;
+  position:sticky;top:0;background:var(--panel);z-index:1;
+}
+tbody tr{transition:background .12s;}
+tbody tr:hover{background:var(--panel2);}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;}
+td .code{font-family:var(--mono);font-size:12px;letter-spacing:.3px;}
+.badge{
+  display:inline-block;padding:3px 10px;border-radius:99px;font-size:10.5px;font-weight:700;
+  letter-spacing:.4px;text-transform:uppercase;font-family:var(--mono);
+}
+.badge.danger{background:rgba(244,63,94,.13);color:var(--crimson);border:1px solid rgba(244,63,94,.25);}
+.badge.good{background:rgba(52,211,153,.12);color:var(--green);border:1px solid rgba(52,211,153,.22);}
+.badge.warn{background:rgba(245,165,36,.12);color:var(--amber);border:1px solid rgba(245,165,36,.22);}
+
+/* ===== insight boxes ===== */
+.insight{
+  background:linear-gradient(135deg, rgba(45,212,191,.05), transparent 50%), var(--panel2);
+  border:1px solid var(--border);border-left:3px solid var(--teal);
+  border-radius:10px;padding:16px 18px;
+  font-size:13px;color:var(--muted);line-height:1.65;margin-bottom:22px;
+}
+.insight b{color:var(--ink);}
+.insight .tag{color:var(--teal);font-weight:600;font-family:var(--mono);font-size:12.5px;}
+.insight.amber{border-left-color:var(--amber);}
+.insight.amber .tag{color:var(--amber);}
+
+/* ===== band pills / legend ===== */
+.band-pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+.band-pill{
+  padding:8px 18px;border-radius:99px;border:1px solid var(--border);
+  background:var(--panel2);font-size:12.5px;font-weight:600;cursor:pointer;
+  color:var(--muted);transition:all .15s;font-family:var(--body);
+}
+.band-pill:hover{border-color:var(--amber);color:var(--ink);transform:translateY(-1px);}
+.band-pill.active{
+  background:linear-gradient(135deg,var(--amber),#e08c00);
+  color:#1A1000;border-color:var(--amber);
+  box-shadow:0 3px 12px rgba(245,165,36,.3);
+}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px;}
+.legend .item{
+  display:inline-flex;align-items:center;gap:7px;
+  font-size:12px;color:var(--muted);
+}
+.legend .dot{width:11px;height:11px;border-radius:3px;display:inline-block;}
+
+.mini-bars{display:flex;height:7px;border-radius:4px;overflow:hidden;width:100%;min-width:90px;background:var(--bg2);}
+.mini-bars span{display:block;height:100%;}
+
+.heatmap-cell{
+  text-align:center;font-family:var(--mono);font-size:10.5px;font-weight:600;
+  border-radius:4px;color:#0B0E14;
+}
+
+.subtitle{
+  font-family:var(--mono);font-size:10px;color:var(--faint);
+  text-transform:uppercase;letter-spacing:1.8px;margin-bottom:10px;
+}
+
+footer{
+  text-align:center;color:var(--faint);font-size:11.5px;
+  font-family:var(--mono);letter-spacing:.5px;
+  padding:44px 0 14px;
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="pulse"></div>
+    <div>
+      <span class="eyebrow">Telemetria de frota</span>
+      <h1>Excesso de Acelerador · Painel Analítico</h1>
+    </div>
+  </div>
+  <div class="period-chip" id="period-label">Aguardando planilha mensal</div>
+  <div class="upload-area">
+    <label class="file-label">
+      <span>↑ Carregar planilha</span>
+      <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
+    </label>
+    <button class="btn-ghost" id="resetBtn">Limpar</button>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="empty-state" id="emptyState">
+    <span class="gauge-icon">⟍ ⏵ ⟋</span>
+    <h2>Nenhum período carregado</h2>
+    <p>Carregue a planilha mensal de eventos (.xlsx) para gerar o diagnóstico completo da frota.
+    O painel identifica automaticamente os veículos e motoristas com maior incidência, a distribuição por faixa de velocidade e o perfil de cada operação.</p>
+  </div>
+
+  <div id="dashboard" class="hidden">
+
+    <!-- HERO: diagnóstico dinâmico -->
+    <div class="hero reveal">
+      <div>
+        <div class="eyebrow">Diagnóstico do período</div>
+        <h2 id="heroTitle">—</h2>
+        <p id="heroText">—</p>
+      </div>
+      <div>
+        <div class="gauge-wrap">
+          <canvas id="gaugeChart"></canvas>
+          <div class="gauge-center">
+            <div class="big" id="gaugePct">—</div>
+            <div class="lbl">dos eventos na arrancada<br>(0–30 km/h)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- filtros -->
+    <div class="filters reveal reveal-d1">
+      <div class="field">
+        <label>Veículo</label>
+        <select id="filterCodigo"><option value="">Toda a frota</option></select>
+      </div>
+      <div class="field">
+        <label>Motorista</label>
+        <select id="filterMotorista"><option value="">Todos os motoristas</option></select>
+      </div>
+      <button class="btn-apply" id="applyFilters">Aplicar</button>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpi-grid reveal reveal-d2" id="kpiGrid"></div>
+
+    <!-- 01 distribuição -->
+    <div class="section-head reveal">
+      <span class="num">01</span><h2>Distribuição por faixa de velocidade</h2>
+      <span class="hint">onde os eventos acontecem</span>
+    </div>
+    <div class="grid-2">
+      <div class="panel">
+        <h3>Eventos por faixa</h3>
+        <div class="desc">Percentual de eventos em cada faixa. Concentração em 0–30 km/h indica eventos predominantemente na arrancada.</div>
+        <div class="chart-wrap" style="height:290px;">
+          <canvas id="chartSpeedBands" role="img" aria-label="Distribuição percentual de eventos por faixa de velocidade"></canvas>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Drill-down: quem lidera em cada faixa</h3>
+        <div class="desc">Selecione a faixa para ver os veículos e motoristas que concentram os eventos nela.</div>
+        <div class="band-pills" id="bandPills"></div>
+        <div id="bandInsight" style="font-size:12.5px;color:var(--muted);line-height:1.6;"></div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="panel">
+        <div class="subtitle">Top veículos na faixa selecionada</div>
+        <div class="chart-wrap" style="height:260px;">
+          <canvas id="chartBandVehicles" role="img" aria-label="Top veículos na faixa de velocidade selecionada"></canvas>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="subtitle">Top motoristas na faixa selecionada</div>
+        <div class="chart-wrap" style="height:260px;">
+          <canvas id="chartBandDrivers" role="img" aria-label="Top motoristas na faixa de velocidade selecionada"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- 02 evolução -->
+    <div class="section-head reveal">
+      <span class="num">02</span><h2>Evolução no período</h2>
+      <span class="hint">tendência diária</span>
+    </div>
+    <div class="grid-2">
+      <div class="panel">
+        <h3>Eventos por dia</h3>
+        <div class="desc">Volume diário de eventos registrados.</div>
+        <div class="chart-wrap" style="height:250px;">
+          <canvas id="chartDaily" role="img" aria-label="Número de eventos por dia"></canvas>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Velocidade média dos eventos por dia</h3>
+        <div class="desc">Indica se o perfil dos eventos está migrando para faixas mais altas ou mais baixas ao longo do mês.</div>
+        <div class="chart-wrap" style="height:250px;">
+          <canvas id="chartSpeedTrend" role="img" aria-label="Velocidade média por dia"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- 03 horários -->
+    <div class="section-head reveal">
+      <span class="num">03</span><h2>Concentração horária</h2>
+      <span class="hint">hora do dia × faixa de velocidade</span>
+    </div>
+    <div class="panel" style="margin-bottom:20px;">
+      <div class="desc">Cada célula mostra o nº de eventos naquela hora e faixa. Quanto mais intensa a cor, maior a concentração — útil para identificar trechos de rota e horários críticos.</div>
+      <div id="heatmapWrap" style="overflow-x:auto;"></div>
+    </div>
+
+    <!-- 04 severidade -->
+    <div class="section-head reveal">
+      <span class="num">04</span><h2>Ranking de severidade</h2>
+      <span class="hint">prioriza velocidade alta, não só volume</span>
+    </div>
+    <div class="panel" style="margin-bottom:20px;">
+      <div class="legend">
+        <span class="item"><span class="dot" style="background:#34D399;"></span>0–20 km/h</span>
+        <span class="item"><span class="dot" style="background:#F5A524;"></span>20–30 km/h</span>
+        <span class="item"><span class="dot" style="background:#FB923C;"></span>30–50 km/h</span>
+        <span class="item"><span class="dot" style="background:#F43F5E;"></span>50+ km/h</span>
+      </div>
+      <div class="desc">A barra de cada linha mostra a proporção de eventos em cada faixa. Quanto mais laranja/vermelho, mais eventos em velocidade alta — maior impacto no consumo. <b>Clique em um veículo</b> para ver à direita os motoristas que rodaram nele.</div>
+      <div class="grid-2" style="margin-bottom:0;">
+        <div>
+          <div class="subtitle">Veículos</div>
+          <div style="max-height:430px;overflow:auto;">
+            <table id="tableSeverityVehicles">
+              <thead><tr><th>Código</th><th class="num">Eventos</th><th>Distribuição</th><th>Status</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+        <div>
+          <div class="subtitle" id="severityDriversTitle">Motoristas (ranking geral)</div>
+          <div style="max-height:430px;overflow:auto;">
+            <table id="tableSeverityDrivers">
+              <thead><tr><th>Motorista</th><th class="num">Eventos</th><th>Distribuição</th><th>Status</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 05 rankings -->
+    <div class="section-head reveal">
+      <span class="num">05</span><h2>Extremos da frota</h2>
+      <span class="hint">clique em uma barra para detalhar os motoristas</span>
+    </div>
+    <div class="grid-2">
+      <div class="panel">
+        <h3 style="color:var(--crimson);">Top 10 · mais eventos</h3>
+        <div class="desc">Veículos que mais geraram eventos no período.</div>
+        <div class="chart-wrap" style="height:320px;">
+          <canvas id="chartWorstVehicles" role="img" aria-label="10 veículos com mais eventos"></canvas>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Motoristas do veículo selecionado</h3>
+        <div id="worstVehicleDrivers"></div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="panel">
+        <h3 style="color:var(--green);">Top 10 · menos eventos</h3>
+        <div class="desc">Veículos com melhor desempenho dentre os que registraram eventos.</div>
+        <div class="chart-wrap" style="height:320px;">
+          <canvas id="chartBestVehicles" role="img" aria-label="10 veículos com menos eventos"></canvas>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Motoristas do veículo selecionado</h3>
+        <div id="bestVehicleDrivers"></div>
+      </div>
+    </div>
+
+    <!-- 06 tabelas -->
+    <div class="section-head reveal">
+      <span class="num">06</span><h2>Visão completa</h2>
+      <span class="hint">todos os veículos e motoristas</span>
+    </div>
+    <div class="grid-2">
+      <div class="panel">
+        <h3>Veículos</h3>
+        <div class="desc">Ordenados por número de eventos. A barra mostra o perfil de faixas (cores da legenda acima).</div>
+        <div style="max-height:420px;overflow:auto;">
+          <table id="tableVehicles">
+            <thead><tr><th>Código</th><th class="num">Eventos</th><th class="num">Vel. média</th><th class="num">RPM médio</th><th>Perfil</th><th>Status</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Motoristas</h3>
+        <div class="desc">Ordenados por número de eventos, com a quantidade de veículos operados.</div>
+        <div style="max-height:420px;overflow:auto;">
+          <table id="tableDrivers">
+            <thead><tr><th>Motorista</th><th class="num">Eventos</th><th class="num">Veículos</th><th class="num">Vel. média</th><th>Perfil</th><th>Status</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 07 consistência -->
+    <div class="section-head reveal">
+      <span class="num">07</span><h2>Consistência do motorista entre veículos</h2>
+      <span class="hint">comportamento ou máquina?</span>
+    </div>
+    <div class="panel" style="margin-bottom:20px;">
+      <div class="desc">
+        Para motoristas com 2+ veículos, comparamos a taxa de <b>eventos/dia</b> em cada veículo e calculamos o desvio padrão.
+        <b>Desvio baixo</b> → o motorista mantém o mesmo ritmo em qualquer veículo (fator dominante: <b>comportamento</b>).
+        <b>Desvio alto</b> → a taxa muda muito entre veículos (fator dominante: <b>veículo</b> — possível problema mecânico, calibração ou rota).
+      </div>
+      <div style="max-height:420px;overflow:auto;">
+        <table id="tableDriverConsistency">
+          <thead><tr><th>Motorista</th><th class="num">Veículos</th><th class="num">Eventos/dia médio</th><th class="num">Desvio padrão</th><th>Por veículo (eventos/dia)</th><th>Padrão</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 08 recomendações -->
+    <div class="section-head reveal">
+      <span class="num">08</span><h2>Recomendações de calibração</h2>
+      <span class="hint">% do pedal e tempo do evento</span>
+    </div>
+    <div class="insight amber" id="paramInsight"></div>
+
+  </div>
+</div>
+
+<footer>TELEMETRIA · EXCESSO DE ACELERADOR · FAIXAS 0-20 / 20-30 / 30-50 / 50+ KM/H</footer>
+
+<script>
+let rawData = [];
+let currentData = [];
+let selectedBand = null;
+
+const SPEED_BANDS = [
+  {key:'b1', label:'0–20 km/h', min:0, max:20, color:'#34D399', weight:1},
+  {key:'b2', label:'20–30 km/h', min:20, max:30, color:'#F5A524', weight:2},
+  {key:'b3', label:'30–50 km/h', min:30, max:50, color:'#FB923C', weight:3},
+  {key:'b4', label:'50+ km/h', min:50, max:Infinity, color:'#F43F5E', weight:5},
+];
+
+Chart.defaults.font.family = "'Inter', sans-serif";
+Chart.defaults.font.size = 11.5;
+Chart.defaults.color = '#8A94A6';
+
+const charts = {};
+function destroyCharts(){ Object.values(charts).forEach(c=>{ if(c) c.destroy(); }); }
+
+function parseDate(str){
+  if(!str) return null;
+  const parts = String(str).split(' ');
+  const d = parts[0].split('/');
+  if(d.length<3) return null;
+  const time = parts[1] ? parts[1].split(':') : ['0','0','0'];
+  return new Date(+d[2], +d[1]-1, +d[0], +time[0]||0, +time[1]||0, +time[2]||0);
+}
+
+document.getElementById('fileInput').addEventListener('change', function(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    const data = new Uint8Array(ev.target.result);
+    const wb = XLSX.read(data, {type:'array'});
+    const sheet = wb.Sheets[wb.SheetNames[0]];
+    const json = XLSX.utils.sheet_to_json(sheet, {defval:null});
+    rawData = json.map(r=>({
+      codigo: r['Código'] || r['Codigo'] || r['Placa'] || '',
+      motorista: r['Motorista'] || '',
+      date: parseDate(r['Data/Hora']),
+      velocidade: Number(r['Velocidade Máxima']) || 0,
+      rpm: Number(r['RPM Máximo']) || 0,
+    })).filter(r=>r.codigo && r.motorista && String(r.motorista).trim() !== '');
+    populateFilters();
+    selectedBand = null;
+    renderDashboard(rawData);
+  };
+  reader.readAsArrayBuffer(file);
+});
+
+document.getElementById('resetBtn').addEventListener('click', function(){
+  rawData = [];
+  document.getElementById('fileInput').value = '';
+  document.getElementById('dashboard').classList.add('hidden');
+  document.getElementById('emptyState').classList.remove('hidden');
+  document.getElementById('period-label').textContent = 'Aguardando planilha mensal';
+  destroyCharts();
+});
+
+document.getElementById('applyFilters').addEventListener('click', function(){
+  const codigo = document.getElementById('filterCodigo').value;
+  const motorista = document.getElementById('filterMotorista').value;
+  let filtered = rawData;
+  if(codigo) filtered = filtered.filter(r=>r.codigo===codigo);
+  if(motorista) filtered = filtered.filter(r=>r.motorista===motorista);
+  renderDashboard(filtered);
+});
+
+function populateFilters(){
+  const codigos = [...new Set(rawData.map(r=>r.codigo))].sort();
+  const motoristas = [...new Set(rawData.map(r=>r.motorista))].sort();
+  document.getElementById('filterCodigo').innerHTML = '<option value="">Toda a frota</option>' + codigos.map(c=>`<option value="${c}">${c}</option>`).join('');
+  document.getElementById('filterMotorista').innerHTML = '<option value="">Todos os motoristas</option>' + motoristas.map(m=>`<option value="${m}">${m}</option>`).join('');
+}
+
+function bandCounts(data){
+  return SPEED_BANDS.map(b=>data.filter(r=>r.velocidade>=b.min && r.velocidade<b.max).length);
+}
+
+function groupBy(data, key){
+  const groups = {};
+  data.forEach(r=>{ (groups[r[key]] = groups[r[key]] || []).push(r); });
+  return groups;
+}
+
+function profileBar(counts, total){
+  if(!total) return '';
+  return `<div class="mini-bars" title="0-20: ${counts[0]} | 20-30: ${counts[1]} | 30-50: ${counts[2]} | 50+: ${counts[3]}">` +
+    SPEED_BANDS.map((b,i)=>`<span style="background:${b.color};width:${(counts[i]/total*100)}%;"></span>`).join('') + `</div>`;
+}
+
+function animateCount(el, target, suffix, decimals){
+  const dur = 900, t0 = performance.now();
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(reduce){ el.textContent = target.toLocaleString('pt-BR',{minimumFractionDigits:decimals||0,maximumFractionDigits:decimals||0}) + (suffix||''); return; }
+  function step(t){
+    const p = Math.min(1,(t-t0)/dur), e = 1-Math.pow(1-p,3);
+    el.textContent = (target*e).toLocaleString('pt-BR',{minimumFractionDigits:decimals||0,maximumFractionDigits:decimals||0}) + (suffix||'');
+    if(p<1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+function renderDashboard(data){
+  document.getElementById('emptyState').classList.add('hidden');
+  document.getElementById('dashboard').classList.remove('hidden');
+  destroyCharts();
+  currentData = data;
+
+  if(!data.length){
+    document.getElementById('dashboard').classList.add('hidden');
+    const es = document.getElementById('emptyState');
+    es.classList.remove('hidden');
+    es.innerHTML = '<h2>Nenhum registro corresponde aos filtros</h2><p>Ajuste os filtros e aplique novamente.</p>';
+    return;
+  }
+
+  const dates = data.map(r=>r.date).filter(Boolean);
+  if(dates.length){
+    const min = new Date(Math.min(...dates)), max = new Date(Math.max(...dates));
+    const fmt = d=>d.toLocaleDateString('pt-BR');
+    document.getElementById('period-label').textContent =
+      `${fmt(min)} — ${fmt(max)} · ${data.length} eventos · ${new Set(data.map(r=>r.codigo)).size} veículos · ${new Set(data.map(r=>r.motorista)).size} motoristas`;
+  }
+
+  renderHero(data);
+  renderKPIs(data);
+  renderSpeedBands(data);
+  renderBandPills(data);
+  renderBandDrilldown(data);
+  renderTimeSeries(data);
+  renderHeatmap(data);
+  renderSeverity(data);
+  renderVehicleRankings(data);
+  renderFullTables(data);
+  renderDriverConsistency(data);
+  renderParamAnalysis(data);
+}
+
+/* ===== HERO ===== */
+function renderHero(data){
+  const total = data.length;
+  const counts = bandCounts(data);
+  const arr = counts[0]+counts[1], mov = counts[2]+counts[3];
+  const arrPct = arr/total*100;
+
+  if(charts.gauge) charts.gauge.destroy();
+  charts.gauge = new Chart(document.getElementById('gaugeChart'), {
+    type:'doughnut',
+    data:{
+      labels: SPEED_BANDS.map((b,i)=>`${b.label} · ${(counts[i]/total*100).toFixed(1)}%`),
+      datasets:[{
+        data: counts,
+        backgroundColor: SPEED_BANDS.map(b=>b.color),
+        borderWidth:0, borderRadius:5, spacing:2,
+      }]
+    },
+    options:{
+      cutout:'74%', responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{position:'bottom', labels:{boxWidth:9, boxHeight:9, padding:10, font:{size:10.5}}},
+        tooltip:{callbacks:{label:c=>`${SPEED_BANDS[c.dataIndex].label}: ${c.parsed} eventos (${(c.parsed/total*100).toFixed(1)}%)`}}
+      },
+      animation:{animateRotate:true, duration:1100}
+    }
+  });
+  animateCount(document.getElementById('gaugePct'), arrPct, '%', 0);
+
+  const vGroups = groupBy(data,'codigo'), dGroups = groupBy(data,'motorista');
+  const worstV = Object.entries(vGroups).sort((a,b)=>b[1].length-a[1].length)[0];
+  const worstD = Object.entries(dGroups).sort((a,b)=>b[1].length-a[1].length)[0];
+  const avgPerV = (total/Object.keys(vGroups).length).toFixed(1);
+
+  let titulo, texto;
+  if(arrPct >= 60){
+    titulo = `A frota concentra os eventos na <span class="hl">arrancada</span>`;
+    texto = `${arrPct.toFixed(1)}% dos ${total.toLocaleString('pt-BR')} eventos ocorrem entre 0 e 30 km/h — o uso intenso do pedal está ligado à saída e retomada, não à condução em movimento. `;
+  } else if(arrPct >= 40){
+    titulo = `Eventos <span class="hl">divididos</span> entre arrancada e movimento`;
+    texto = `O período mostra um perfil misto: ${arrPct.toFixed(1)}% dos eventos na arrancada e ${(100-arrPct).toFixed(1)}% com o veículo já em movimento. Ambas as frentes merecem atenção. `;
+  } else {
+    titulo = `O excesso acontece com o veículo <span class="hl">em movimento</span>`;
+    texto = `${(100-arrPct).toFixed(1)}% dos eventos ocorrem acima de 30 km/h — perfil de condução agressiva fora da arrancada, com impacto direto no consumo. `;
+  }
+  texto += `O veículo <span class="tag">${worstV[0]}</span> lidera com <b>${worstV[1].length}</b> eventos (média da frota: ${avgPerV}/veículo) e o motorista <span class="tag">${worstD[0]}</span> registra <b>${worstD[1].length}</b> ocorrências.`;
+
+  document.getElementById('heroTitle').innerHTML = titulo;
+  document.getElementById('heroText').innerHTML = texto;
+}
+
+/* ===== KPIs ===== */
+function renderKPIs(data){
+  const total = data.length;
+  const veiculos = new Set(data.map(r=>r.codigo)).size;
+  const motoristas = new Set(data.map(r=>r.motorista)).size;
+  const avgSpeed = data.reduce((s,r)=>s+r.velocidade,0)/total;
+  const avgRpm = Math.round(data.reduce((s,r)=>s+r.rpm,0)/total);
+  const perVehicle = total/veiculos;
+
+  const kpis = [
+    {label:'Eventos no período', v:total, accent:'var(--amber)', color:'var(--amber)'},
+    {label:'Veículos envolvidos', v:veiculos, accent:'var(--blue)'},
+    {label:'Motoristas envolvidos', v:motoristas, accent:'var(--blue)'},
+    {label:'Eventos por veículo', v:perVehicle, dec:1, accent:'var(--orange)'},
+    {label:'Velocidade média', v:avgSpeed, dec:1, suf:' km/h', accent:'var(--teal)'},
+    {label:'RPM médio', v:avgRpm, accent:'var(--teal)'},
+  ];
+
+  const grid = document.getElementById('kpiGrid');
+  grid.innerHTML = kpis.map((k,i)=>`
+    <div class="kpi" style="--kpi-accent:${k.accent};${k.color?`--kpi-color:${k.color};`:''}">
+      <div class="label">${k.label}</div>
+      <div class="value" id="kpiV${i}">0</div>
+    </div>`).join('');
+  kpis.forEach((k,i)=>animateCount(document.getElementById('kpiV'+i), k.v, k.suf||'', k.dec||0));
+}
+
+/* ===== bands ===== */
+function renderSpeedBands(data){
+  const total = data.length;
+  const counts = bandCounts(data);
+  charts.speedBands = new Chart(document.getElementById('chartSpeedBands'), {
+    type:'bar',
+    data:{
+      labels: SPEED_BANDS.map(b=>b.label),
+      datasets:[{ data: counts.map(c=>+(c/total*100).toFixed(1)), backgroundColor:SPEED_BANDS.map(b=>b.color), borderRadius:7, maxBarThickness:64 }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>`${c.parsed.y}% (${counts[c.dataIndex]} eventos)`}}},
+      scales:{ y:{ticks:{callback:v=>v+'%'}, grid:{color:'#1B2435'}}, x:{grid:{display:false}} }
+    }
+  });
+}
+
+function renderBandPills(data){
+  const counts = bandCounts(data), total = data.length;
+  if(!selectedBand) selectedBand = SPEED_BANDS[0].key;
+  const wrap = document.getElementById('bandPills');
+  wrap.innerHTML = SPEED_BANDS.map((b,i)=>`
+    <button class="band-pill ${selectedBand===b.key?'active':''}" data-band="${b.key}">
+      ${b.label} · ${(counts[i]/total*100).toFixed(0)}%
+    </button>`).join('');
+  wrap.querySelectorAll('.band-pill').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      selectedBand = el.dataset.band;
+      renderBandPills(currentData);
+      renderBandDrilldown(currentData);
+    });
+  });
+}
+
+function renderBandDrilldown(data){
+  if(!selectedBand) selectedBand = SPEED_BANDS[0].key;
+  const band = SPEED_BANDS.find(b=>b.key===selectedBand);
+  const bandData = data.filter(r=>r.velocidade>=band.min && r.velocidade<band.max);
+
+  if(charts.bandVehicles) charts.bandVehicles.destroy();
+  if(charts.bandDrivers) charts.bandDrivers.destroy();
+
+  if(!bandData.length){
+    document.getElementById('bandInsight').innerHTML = `Nenhum evento na faixa <b>${band.label}</b>.`;
+    return;
+  }
+
+  const vTop = Object.entries(groupBy(bandData,'codigo')).map(([k,r])=>[k,r.length]).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const dTop = Object.entries(groupBy(bandData,'motorista')).map(([k,r])=>[k,r.length]).sort((a,b)=>b[1]-a[1]).slice(0,8);
+
+  const barOpts = (clickList,target)=>({
+    indexAxis:'y', responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{ x:{beginAtZero:true, grid:{color:'#1B2435'}}, y:{grid:{display:false}, ticks:{font:{size:10.5}}} }
+  });
+
+  charts.bandVehicles = new Chart(document.getElementById('chartBandVehicles'), {
+    type:'bar',
+    data:{ labels:vTop.map(x=>x[0]), datasets:[{data:vTop.map(x=>x[1]), backgroundColor:band.color, borderRadius:5, maxBarThickness:18}] },
+    options: barOpts()
+  });
+  charts.bandDrivers = new Chart(document.getElementById('chartBandDrivers'), {
+    type:'bar',
+    data:{ labels:dTop.map(x=>x[0]), datasets:[{data:dTop.map(x=>x[1]), backgroundColor:band.color, borderRadius:5, maxBarThickness:18}] },
+    options: barOpts()
+  });
+
+  const pct = (bandData.length/data.length*100).toFixed(1);
+  const top3 = vTop.slice(0,3).reduce((s,x)=>s+x[1],0);
+  document.getElementById('bandInsight').innerHTML = `
+    A faixa <b style="color:${band.color};">${band.label}</b> concentra <b>${bandData.length}</b> eventos (${pct}% do total).
+    Líderes: veículo <b>${vTop[0][0]}</b> (${vTop[0][1]}) e motorista <b>${dTop[0][0]}</b> (${dTop[0][1]}).
+    Os 3 veículos no topo respondem por ${(top3/bandData.length*100).toFixed(0)}% dos eventos desta faixa.`;
+}
+
+/* ===== time series ===== */
+function renderTimeSeries(data){
+  const byDay = {};
+  data.forEach(r=>{
+    if(!r.date) return;
+    const key = r.date.toLocaleDateString('pt-BR');
+    (byDay[key] = byDay[key] || {count:0, speedSum:0, t:r.date.getTime()});
+    byDay[key].count++; byDay[key].speedSum += r.velocidade;
+  });
+  const days = Object.entries(byDay).sort((a,b)=>a[1].t-b[1].t);
+  const labels = days.map(d=>d[0].slice(0,5));
+  const counts = days.map(d=>d[1].count);
+  const avgs = days.map(d=>+(d[1].speedSum/d[1].count).toFixed(1));
+
+  const lineOpts = {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{ y:{beginAtZero:true, grid:{color:'#1B2435'}}, x:{grid:{display:false}, ticks:{maxRotation:50, autoSkip:true, font:{size:10}}} }
+  };
+
+  charts.daily = new Chart(document.getElementById('chartDaily'), {
+    type:'line',
+    data:{ labels, datasets:[{ data:counts, borderColor:'#60A5FA', borderWidth:2,
+      backgroundColor:(ctx)=>{ const g=ctx.chart.ctx.createLinearGradient(0,0,0,250); g.addColorStop(0,'rgba(96,165,250,.25)'); g.addColorStop(1,'rgba(96,165,250,0)'); return g; },
+      fill:true, tension:.35, pointRadius:0, pointHitRadius:12 }] },
+    options: lineOpts
+  });
+  charts.speedTrend = new Chart(document.getElementById('chartSpeedTrend'), {
+    type:'line',
+    data:{ labels, datasets:[{ data:avgs, borderColor:'#F5A524', borderWidth:2,
+      backgroundColor:(ctx)=>{ const g=ctx.chart.ctx.createLinearGradient(0,0,0,250); g.addColorStop(0,'rgba(245,165,36,.22)'); g.addColorStop(1,'rgba(245,165,36,0)'); return g; },
+      fill:true, tension:.35, pointRadius:0, pointHitRadius:12 }] },
+    options: lineOpts
+  });
+}
+
+/* ===== heatmap ===== */
+function renderHeatmap(data){
+  const withHour = data.filter(r=>r.date);
+  if(!withHour.length){
+    document.getElementById('heatmapWrap').innerHTML = '<div class="desc">Sem dados de horário para gerar o mapa de calor.</div>';
+    return;
+  }
+  const matrix = SPEED_BANDS.map(()=>new Array(24).fill(0));
+  withHour.forEach(r=>{
+    const bi = SPEED_BANDS.findIndex(b=>r.velocidade>=b.min && r.velocidade<b.max);
+    if(bi>=0) matrix[bi][r.date.getHours()]++;
+  });
+  const maxVal = Math.max(...matrix.flat(), 1);
+
+  let html = '<table style="font-size:11px;"><thead><tr><th style="min-width:90px;">Faixa</th>';
+  for(let h=0;h<24;h++) html += `<th class="num" style="min-width:34px;">${h}h</th>`;
+  html += '</tr></thead><tbody>';
+  SPEED_BANDS.forEach((b,bi)=>{
+    html += `<tr><td style="font-weight:600;color:${b.color};">${b.label}</td>`;
+    for(let h=0;h<24;h++){
+      const v = matrix[bi][h], it = v/maxVal;
+      const op = it===0 ? 0 : (.18 + it*.82);
+      html += `<td style="padding:3px;"><div class="heatmap-cell" style="background:${it?b.color:'transparent'};opacity:${op.toFixed(2)};padding:7px 2px;color:${it>0.45?'#0B0E14':'var(--ink)'};">${v||''}</div></td>`;
+    }
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  document.getElementById('heatmapWrap').innerHTML = html;
+}
+
+/* ===== severity ===== */
+function severityRow(id, rows, maxScore, onClick, mono){
+  const counts = bandCounts(rows);
+  const score = counts.reduce((s,c,i)=>s+c*SPEED_BANDS[i].weight,0);
+  let cls='good', label='Bom';
+  if(score >= maxScore*0.5){cls='danger'; label='Crítico';}
+  else if(score >= maxScore*0.2){cls='warn'; label='Atenção';}
+  return `<tr ${onClick?`style="cursor:pointer;" onclick="${onClick}"`:''}>
+    <td>${mono?`<span class="code">${id}</span>`:id}</td>
+    <td class="num">${rows.length}</td>
+    <td>${profileBar(counts, rows.length)}</td>
+    <td><span class="badge ${cls}">${label}</span></td>
+  </tr>`;
+}
+
+function renderSeverity(data){
+  const vGroups = groupBy(data,'codigo'), dGroups = groupBy(data,'motorista');
+  const score = rows=>{ const c=bandCounts(rows); return c.reduce((s,v,i)=>s+v*SPEED_BANDS[i].weight,0); };
+
+  const vList = Object.keys(vGroups).map(k=>({k, s:score(vGroups[k])})).sort((a,b)=>b.s-a.s);
+  const dList = Object.keys(dGroups).map(k=>({k, s:score(dGroups[k])})).sort((a,b)=>b.s-a.s);
+  const maxV = vList.length?vList[0].s:1, maxD = dList.length?dList[0].s:1;
+
+  document.querySelector('#tableSeverityVehicles tbody').innerHTML =
+    vList.map(v=>severityRow(v.k, vGroups[v.k], maxV, `renderSeverityDriversForVehicle('${v.k.replace(/'/g,"\\'")}')`, true)).join('');
+
+  document.getElementById('severityDriversTitle').textContent = 'Motoristas (ranking geral)';
+  document.querySelector('#tableSeverityDrivers tbody').innerHTML =
+    dList.map(d=>severityRow(d.k, dGroups[d.k], maxD, null, false)).join('');
+}
+
+function renderSeverityDriversForVehicle(codigo){
+  const rows = currentData.filter(r=>r.codigo===codigo);
+  const dGroups = groupBy(rows,'motorista');
+  const score = r=>{ const c=bandCounts(r); return c.reduce((s,v,i)=>s+v*SPEED_BANDS[i].weight,0); };
+  const dList = Object.keys(dGroups).map(k=>({k, s:score(dGroups[k])})).sort((a,b)=>b.s-a.s);
+  const maxD = dList.length?dList[0].s:1;
+  document.getElementById('severityDriversTitle').textContent = `Motoristas do veículo ${codigo}`;
+  document.querySelector('#tableSeverityDrivers tbody').innerHTML =
+    dList.map(d=>severityRow(d.k, dGroups[d.k], maxD, null, false)).join('');
+}
+
+/* ===== rankings ===== */
+function renderVehicleRankings(data){
+  const groups = groupBy(data,'codigo');
+  const stats = Object.entries(groups).map(([codigo,rows])=>({codigo, total:rows.length})).sort((a,b)=>b.total-a.total);
+  const worst = stats.slice(0,10);
+  const best = [...stats].sort((a,b)=>a.total-b.total).slice(0,10);
+
+  const mk = (canvasId, list, color, targetId) => new Chart(document.getElementById(canvasId), {
+    type:'bar',
+    data:{ labels:list.map(s=>s.codigo), datasets:[{data:list.map(s=>s.total), backgroundColor:color, borderRadius:5, maxBarThickness:20}] },
+    options:{
+      indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      onHover:(e,el)=>{ e.native.target.style.cursor = el.length?'pointer':'default'; },
+      onClick:(e,el)=>{ if(el.length) renderVehicleDrivers(data, list[el[0].index].codigo, targetId); },
+      plugins:{legend:{display:false}},
+      scales:{ x:{beginAtZero:true, grid:{color:'#1B2435'}}, y:{grid:{display:false}, ticks:{font:{family:"'JetBrains Mono', monospace", size:10.5}}} }
+    }
+  });
+
+  charts.worstVehicles = mk('chartWorstVehicles', worst, '#F43F5E', 'worstVehicleDrivers');
+  charts.bestVehicles = mk('chartBestVehicles', best, '#34D399', 'bestVehicleDrivers');
+
+  const ph = '<div class="desc" style="padding:30px 10px;text-align:center;">Clique em uma barra do gráfico ao lado<br>para listar os motoristas do veículo.</div>';
+  document.getElementById('worstVehicleDrivers').innerHTML = ph;
+  document.getElementById('bestVehicleDrivers').innerHTML = ph;
+}
+
+function renderVehicleDrivers(data, codigo, targetId){
+  const rows = data.filter(r=>r.codigo===codigo);
+  const dStats = Object.entries(groupBy(rows,'motorista')).map(([m,r])=>({m, t:r.length})).sort((a,b)=>b.t-a.t);
+  const maxT = dStats[0]?dStats[0].t:1;
+  document.getElementById(targetId).innerHTML = `
+    <div class="desc" style="margin-bottom:10px;">Motoristas de <span class="code" style="color:var(--amber);">${codigo}</span> · ${rows.length} eventos</div>
+    <div style="max-height:270px;overflow:auto;">
+    <table>
+      <thead><tr><th>Motorista</th><th class="num">Eventos</th><th style="width:38%;"></th></tr></thead>
+      <tbody>${dStats.map(d=>`
+        <tr><td>${d.m}</td><td class="num">${d.t}</td>
+        <td><div class="mini-bars"><span style="background:var(--blue);width:${(d.t/maxT*100)}%;"></span></div></td></tr>`).join('')}
+      </tbody>
+    </table></div>`;
+}
+
+/* ===== full tables ===== */
+function renderFullTables(data){
+  const vGroups = groupBy(data,'codigo');
+  const vStats = Object.entries(vGroups).map(([codigo,rows])=>{
+    const total = rows.length;
+    return {
+      codigo, total,
+      avgSpeed:+(rows.reduce((s,r)=>s+r.velocidade,0)/total).toFixed(1),
+      avgRpm:Math.round(rows.reduce((s,r)=>s+r.rpm,0)/total),
+      counts:bandCounts(rows)
+    };
+  }).sort((a,b)=>b.total-a.total);
+  const maxV = vStats[0].total;
+
+  document.querySelector('#tableVehicles tbody').innerHTML = vStats.map(s=>{
+    let cls='good', label='Bom';
+    if(s.total>=maxV*0.66){cls='danger';label='Crítico';}
+    else if(s.total>=maxV*0.33){cls='warn';label='Atenção';}
+    return `<tr>
+      <td><span class="code">${s.codigo}</span></td>
+      <td class="num">${s.total}</td>
+      <td class="num">${s.avgSpeed}</td>
+      <td class="num">${s.avgRpm}</td>
+      <td>${profileBar(s.counts, s.total)}</td>
+      <td><span class="badge ${cls}">${label}</span></td></tr>`;
+  }).join('');
+
+  const dGroups = groupBy(data,'motorista');
+  const dStats = Object.entries(dGroups).map(([motorista,rows])=>{
+    const total = rows.length;
+    return {
+      motorista, total,
+      veiculos:new Set(rows.map(r=>r.codigo)).size,
+      avgSpeed:+(rows.reduce((s,r)=>s+r.velocidade,0)/total).toFixed(1),
+      counts:bandCounts(rows)
+    };
+  }).sort((a,b)=>b.total-a.total);
+  const maxD = dStats[0].total;
+
+  document.querySelector('#tableDrivers tbody').innerHTML = dStats.map(s=>{
+    let cls='good', label='Bom';
+    if(s.total>=maxD*0.66){cls='danger';label='Crítico';}
+    else if(s.total>=maxD*0.33){cls='warn';label='Atenção';}
+    return `<tr>
+      <td>${s.motorista}</td>
+      <td class="num">${s.total}</td>
+      <td class="num">${s.veiculos}</td>
+      <td class="num">${s.avgSpeed}</td>
+      <td>${profileBar(s.counts, s.total)}</td>
+      <td><span class="badge ${cls}">${label}</span></td></tr>`;
+  }).join('');
+}
+
+/* ===== consistency ===== */
+function renderDriverConsistency(data){
+  const dGroups = groupBy(data,'motorista');
+  const results = [];
+
+  Object.entries(dGroups).forEach(([motorista, driverRows])=>{
+    const byV = groupBy(driverRows,'codigo');
+    const keys = Object.keys(byV);
+    if(keys.length < 2) return;
+
+    const rates = [], details = [];
+    keys.forEach(codigo=>{
+      const vr = byV[codigo];
+      const ts = vr.map(r=>r.date).filter(Boolean).map(d=>d.getTime());
+      let span = 1;
+      if(ts.length>1) span = Math.max(1, Math.round((Math.max(...ts)-Math.min(...ts))/86400000)+1);
+      const rate = +(vr.length/span).toFixed(2);
+      rates.push(rate);
+      details.push({codigo, rate});
+    });
+
+    const mean = rates.reduce((s,v)=>s+v,0)/rates.length;
+    const std = Math.sqrt(rates.reduce((s,v)=>s+(v-mean)**2,0)/rates.length);
+    results.push({motorista, n:keys.length, mean:+mean.toFixed(2), std:+std.toFixed(2),
+      details:details.sort((a,b)=>b.rate-a.rate)});
+  });
+
+  results.sort((a,b)=>b.std-a.std);
+  const tbody = document.querySelector('#tableDriverConsistency tbody');
+  if(!results.length){
+    tbody.innerHTML = '<tr><td colspan="6">Nenhum motorista operou 2 ou mais veículos neste conjunto de dados.</td></tr>';
+    return;
+  }
+  const maxStd = results[0].std || 1;
+
+  tbody.innerHTML = results.map(r=>{
+    let cls='good', label='Consistente · motorista';
+    if(r.std>=maxStd*0.5){cls='danger';label='Inconsistente · veículo';}
+    else if(r.std>=maxStd*0.2){cls='warn';label='Parcial';}
+    return `<tr>
+      <td>${r.motorista}</td>
+      <td class="num">${r.n}</td>
+      <td class="num">${r.mean}</td>
+      <td class="num">${r.std}</td>
+      <td style="font-family:var(--mono);font-size:11px;color:var(--muted);">${r.details.map(d=>`${d.codigo}: ${d.rate}`).join(' · ')}</td>
+      <td><span class="badge ${cls}">${label}</span></td></tr>`;
+  }).join('');
+}
+
+/* ===== param analysis ===== */
+function renderParamAnalysis(data){
+  const total = data.length;
+  const counts = bandCounts(data);
+  const arrPct = +((counts[0]+counts[1])/total*100).toFixed(1);
+  const movPct = +(100-arrPct).toFixed(1);
+
+  let msg = `<b>Leitura do período:</b> `;
+  if(arrPct >= 60){
+    msg += `<span class="tag">${arrPct}%</span> dos eventos ocorrem na faixa 0–30 km/h, ou seja, durante a <b>arrancada e retomadas</b>.
+    Parte desses disparos pode refletir a necessidade real de torque (subidas, veículo carregado) e não má condução.
+    <br><br><b>Recomendação de calibração:</b> avalie <b>aumentar o tempo mínimo</b> de pedal pressionado para gerar o evento — isso filtra picos curtos típicos de arrancada e mantém o foco no uso prolongado do acelerador.
+    Outra opção é aplicar maior tolerância de % do pedal em velocidades abaixo de 30 km/h, mantendo o parâmetro atual apenas para o veículo em movimento.`;
+  } else if(arrPct >= 40){
+    msg += `O perfil é misto: <span class="tag">${arrPct}%</span> dos eventos na arrancada e <span class="tag">${movPct}%</span> com o veículo já em movimento.
+    <br><br><b>Recomendação de calibração:</b> mantenha os parâmetros atuais por mais um ciclo e concentre a ação nos veículos e motoristas marcados como <b>Crítico</b> — o ranking de severidade indica onde o evento em alta velocidade se concentra. Reavalie a calibração no próximo período com o mesmo painel.`;
+  } else {
+    msg += `<span class="tag">${movPct}%</span> dos eventos ocorrem acima de 30 km/h, com o veículo já em movimento — perfil de <b>condução agressiva fora da arrancada</b>, que é o cenário de maior impacto direto no consumo.
+    <br><br><b>Recomendação de calibração:</b> os parâmetros atuais estão capturando bem o comportamento-alvo. Considere <b>reduzir levemente o tempo</b> do evento para ganhar sensibilidade e detectar excessos mais cedo, e direcione o treinamento prioritariamente aos itens marcados como <b>Crítico</b> no ranking de severidade.`;
+  }
+  document.getElementById('paramInsight').innerHTML = msg;
+}
+</script>
+
+</body>
+</html>
