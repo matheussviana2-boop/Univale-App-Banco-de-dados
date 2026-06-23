@@ -194,6 +194,20 @@ body{
   font-family:var(--body);transition:all .15s;
 }
 .btn-apply:hover{border-color:var(--amber);color:var(--amber);}
+.btn-clear{
+  background:transparent;color:var(--muted);border:1px solid var(--border);
+  padding:9px 16px;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;
+  font-family:var(--body);transition:all .15s;
+}
+.btn-clear:hover{border-color:var(--crimson);color:var(--crimson);}
+.btn-mini{
+  background:transparent;border:1px solid var(--border);color:var(--muted);
+  padding:3px 10px;border-radius:99px;font-size:11px;font-weight:600;cursor:pointer;
+  font-family:var(--body);transition:all .15s;
+}
+.btn-mini:hover{border-color:var(--amber);color:var(--amber);}
+
+
 
 /* ===== KPIs ===== */
 .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:30px;}
@@ -277,6 +291,41 @@ td .code{font-family:var(--mono);font-size:12px;letter-spacing:.3px;}
 .insight.amber{border-left-color:var(--amber);}
 .insight.amber .tag{color:var(--amber);}
 
+/* ===== resumo executivo (card único) ===== */
+.exec-card-single{
+  background:var(--panel2);border:1px solid var(--border);border-radius:12px;
+  padding:18px;margin-bottom:22px;
+}
+.exec-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:16px;}
+@media(max-width:760px){.exec-grid{grid-template-columns:1fr;}}
+.exec-sec{
+  background:var(--panel);border:1px solid var(--border);border-radius:10px;
+  padding:14px 16px;border-top:3px solid var(--border2);
+}
+.exec-sec.bad{border-top-color:var(--crimson);}
+.exec-sec.watch{border-top-color:var(--amber);}
+.exec-sec h4{
+  font-size:11px;letter-spacing:.6px;text-transform:uppercase;font-family:var(--mono);
+  margin:0 0 11px;display:flex;align-items:center;gap:7px;
+}
+.exec-sec.bad h4{color:var(--crimson);}
+.exec-sec.watch h4{color:var(--amber);}
+.exec-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;}
+.exec-list li{display:flex;align-items:baseline;justify-content:space-between;gap:10px;font-size:13px;}
+.exec-list .lbl{color:var(--ink);}
+.exec-list .lbl .code{font-family:var(--mono);font-size:12px;color:var(--muted);}
+.exec-list .val{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap;}
+.exec-list .empty{color:var(--faint);font-size:12.5px;font-style:italic;}
+.exec-action{
+  background:linear-gradient(135deg, rgba(244,63,94,.06), transparent 55%), var(--panel);
+  border:1px solid var(--border);border-left:3px solid var(--crimson);
+  border-radius:10px;padding:15px 18px;margin-bottom:0;font-size:13.5px;color:var(--muted);line-height:1.6;
+}
+.exec-action b{color:var(--ink);}
+.exec-action ol{margin:10px 0 0;padding-left:20px;}
+.exec-action ol li{margin-bottom:6px;}
+.exec-action .code{font-family:var(--mono);font-size:12.5px;color:var(--crimson);}
+
 /* ===== band pills / legend ===== */
 .band-pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
 .band-pill{
@@ -299,6 +348,61 @@ td .code{font-family:var(--mono);font-size:12px;letter-spacing:.3px;}
 
 .mini-bars{display:flex;height:7px;border-radius:4px;overflow:hidden;width:100%;min-width:90px;background:var(--bg2);}
 .mini-bars span{display:block;height:100%;}
+
+/* ===== chips por veículo (painel 07) ===== */
+.vchips{display:flex;flex-direction:column;gap:5px;min-width:150px;}
+.vchip{display:flex;align-items:center;gap:7px;font-size:11px;}
+.vchip .code{font-family:var(--mono);color:var(--faint);white-space:nowrap;font-size:10.5px;}
+.vchip .track{flex:1;height:6px;border-radius:3px;background:var(--bg2);overflow:hidden;min-width:34px;}
+.vchip .fill{display:block;height:100%;border-radius:3px;}
+.vchip .rate{font-family:var(--mono);font-weight:600;color:var(--muted);min-width:24px;text-align:right;}
+.vchip.top .code,.vchip.top .rate{color:var(--crimson);}
+
+/* ===== score de influência ===== */
+.infl{display:inline-block;padding:4px 11px;border-radius:99px;font-size:11.5px;font-weight:700;font-family:var(--mono);white-space:nowrap;}
+.infl.danger{background:rgba(244,63,94,.14);color:var(--crimson);border:1px solid rgba(244,63,94,.28);}
+.infl.warn{background:rgba(245,165,36,.13);color:var(--amber);border:1px solid rgba(245,165,36,.24);}
+.infl.good{background:rgba(52,211,153,.12);color:var(--green);border:1px solid rgba(52,211,153,.24);}
+
+/* ===== dependência do veículo: resumo / legenda / filtros / tooltip ===== */
+.dep-summary{
+  background:linear-gradient(135deg, rgba(244,63,94,.06), transparent 55%), var(--panel2);
+  border:1px solid var(--border);border-left:3px solid var(--crimson);
+  border-radius:10px;padding:14px 18px;margin-bottom:16px;
+  font-size:13.5px;color:var(--muted);line-height:1.6;
+}
+.dep-summary b{color:var(--ink);}
+.dep-summary .sx{font-family:var(--mono);font-weight:700;}
+.dep-controls{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;flex-wrap:wrap;margin-bottom:14px;}
+.dep-legend{display:flex;flex-direction:column;gap:5px;font-size:11.5px;color:var(--muted);}
+.dep-legend .dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:5px;}
+.dep-filters{display:flex;gap:7px;flex-wrap:wrap;}
+.dep-fbtn{
+  padding:6px 13px;border-radius:99px;border:1px solid var(--border);
+  background:var(--panel2);color:var(--muted);font-size:12px;font-weight:600;
+  cursor:pointer;transition:all .15s;font-family:var(--body);
+}
+.dep-fbtn:hover{border-color:var(--amber);color:var(--ink);}
+.dep-fbtn.active{background:linear-gradient(135deg,var(--amber),#e08c00);color:#1A1000;border-color:var(--amber);}
+
+.info-tip{position:relative;display:inline-block;margin-left:4px;color:var(--faint);cursor:help;font-size:11px;}
+.info-tip .info-pop{
+  visibility:hidden;opacity:0;transition:opacity .15s;
+  position:absolute;right:0;top:140%;z-index:30;width:260px;
+  background:#0C1119;border:1px solid var(--border);border-radius:8px;
+  padding:10px 12px;font-size:11.5px;font-weight:400;line-height:1.5;
+  color:var(--muted);text-transform:none;letter-spacing:0;
+  box-shadow:0 8px 24px rgba(0,0,0,.5);
+}
+.info-tip:hover .info-pop,.info-tip:focus .info-pop{visibility:visible;opacity:1;}
+
+.depscore{display:flex;flex-direction:column;align-items:flex-end;gap:4px;min-width:96px;}
+.depscore .pct{font-family:var(--mono);font-weight:700;font-size:13px;}
+.depscore .track{width:90px;height:6px;border-radius:3px;background:var(--bg2);overflow:hidden;}
+.depscore .fill{display:block;height:100%;border-radius:3px;}
+.depscore.danger .pct{color:var(--crimson);}
+.depscore.warn .pct{color:var(--amber);}
+.depscore.good .pct{color:var(--green);}
 
 .heatmap-cell{
   text-align:center;font-family:var(--mono);font-size:10.5px;font-weight:600;
@@ -359,8 +463,8 @@ footer{
         <div class="gauge-wrap">
           <canvas id="gaugeChart"></canvas>
           <div class="gauge-center">
-            <div class="big" id="gaugePct">—</div>
-            <div class="lbl">dos eventos na arrancada<br>(0–30 km/h)</div>
+            <div class="big" id="gaugePct" style="color:var(--crimson);">—</div>
+            <div class="lbl">dos eventos são<br><b style="color:var(--crimson);">críticos</b> (50+ km/h)</div>
           </div>
         </div>
       </div>
@@ -377,6 +481,7 @@ footer{
         <select id="filterMotorista"><option value="">Todos os motoristas</option></select>
       </div>
       <button class="btn-apply" id="applyFilters">Aplicar</button>
+      <button class="btn-clear" id="clearFilters">Limpar seleção</button>
     </div>
 
     <!-- KPIs -->
@@ -385,7 +490,6 @@ footer{
     <!-- 01 distribuição -->
     <div class="section-head reveal">
       <span class="num">01</span><h2>Distribuição por faixa de velocidade</h2>
-      <span class="hint">onde os eventos acontecem</span>
     </div>
     <div class="grid-2">
       <div class="panel">
@@ -420,7 +524,6 @@ footer{
     <!-- 02 evolução -->
     <div class="section-head reveal">
       <span class="num">02</span><h2>Evolução no período</h2>
-      <span class="hint">tendência diária</span>
     </div>
     <div class="grid-2">
       <div class="panel">
@@ -442,17 +545,15 @@ footer{
     <!-- 03 horários -->
     <div class="section-head reveal">
       <span class="num">03</span><h2>Concentração horária</h2>
-      <span class="hint">hora do dia × faixa de velocidade</span>
     </div>
     <div class="panel" style="margin-bottom:20px;">
-      <div class="desc">Cada célula mostra o nº de eventos naquela hora e faixa. Quanto mais intensa a cor, maior a concentração — útil para identificar trechos de rota e horários críticos.</div>
+      <div class="desc">Cada célula mostra o nº de eventos naquela hora e faixa. Quanto mais intensa a cor, maior a concentração, útil para identificar trechos de rota e horários críticos.</div>
       <div id="heatmapWrap" style="overflow-x:auto;"></div>
     </div>
 
-    <!-- 04 severidade -->
+    <!-- 04 severidade + visão completa (unificado) -->
     <div class="section-head reveal">
-      <span class="num">04</span><h2>Ranking de severidade</h2>
-      <span class="hint">prioriza velocidade alta, não só volume</span>
+      <span class="num">04</span><h2>Ranking</h2>
     </div>
     <div class="panel" style="margin-bottom:20px;">
       <div class="legend">
@@ -461,22 +562,25 @@ footer{
         <span class="item"><span class="dot" style="background:#FB923C;"></span>30–50 km/h</span>
         <span class="item"><span class="dot" style="background:#F43F5E;"></span>50+ km/h</span>
       </div>
-      <div class="desc">A barra de cada linha mostra a proporção de eventos em cada faixa. Quanto mais laranja/vermelho, mais eventos em velocidade alta — maior impacto no consumo. <b>Clique em um veículo</b> para ver à direita os motoristas que rodaram nele.</div>
+      <div class="desc">A barra de cada linha mostra a proporção de eventos em cada faixa. Quanto mais laranja ou vermelho, mais eventos em velocidade alta, maior impacto no consumo. <b>Clique em um veículo</b> para ver à direita os motoristas que rodaram nele.</div>
       <div class="grid-2" style="margin-bottom:0;">
         <div>
           <div class="subtitle">Veículos</div>
-          <div style="max-height:430px;overflow:auto;">
+          <div style="max-height:460px;overflow:auto;">
             <table id="tableSeverityVehicles">
-              <thead><tr><th>Código</th><th class="num">Eventos</th><th>Distribuição</th><th>Status</th></tr></thead>
+              <thead><tr><th>Código</th><th class="num">Eventos</th><th class="num">Vel. média</th><th class="num">RPM médio</th><th>Distribuição</th><th>Status</th></tr></thead>
               <tbody></tbody>
             </table>
           </div>
         </div>
         <div>
-          <div class="subtitle" id="severityDriversTitle">Motoristas (ranking geral)</div>
-          <div style="max-height:430px;overflow:auto;">
+          <div class="subtitle" style="display:flex;align-items:center;gap:10px;">
+            <span id="severityDriversTitle">Motoristas (ranking geral)</span>
+            <button id="severityClear" class="btn-mini hidden">Limpar seleção</button>
+          </div>
+          <div style="max-height:460px;overflow:auto;">
             <table id="tableSeverityDrivers">
-              <thead><tr><th>Motorista</th><th class="num">Eventos</th><th>Distribuição</th><th>Status</th></tr></thead>
+              <thead><tr><th>Motorista</th><th class="num">Eventos</th><th class="num">Veículos</th><th class="num">Vel. média</th><th>Distribuição</th><th>Status</th></tr></thead>
               <tbody></tbody>
             </table>
           </div>
@@ -487,7 +591,6 @@ footer{
     <!-- 05 rankings -->
     <div class="section-head reveal">
       <span class="num">05</span><h2>Extremos da frota</h2>
-      <span class="hint">clique em uma barra para detalhar os motoristas</span>
     </div>
     <div class="grid-2">
       <div class="panel">
@@ -516,58 +619,53 @@ footer{
       </div>
     </div>
 
-    <!-- 06 tabelas -->
+    <!-- 06 dependência do veículo -->
     <div class="section-head reveal">
-      <span class="num">06</span><h2>Visão completa</h2>
-      <span class="hint">todos os veículos e motoristas</span>
-    </div>
-    <div class="grid-2">
-      <div class="panel">
-        <h3>Veículos</h3>
-        <div class="desc">Ordenados por número de eventos. A barra mostra o perfil de faixas (cores da legenda acima).</div>
-        <div style="max-height:420px;overflow:auto;">
-          <table id="tableVehicles">
-            <thead><tr><th>Código</th><th class="num">Eventos</th><th class="num">Vel. média</th><th class="num">RPM médio</th><th>Perfil</th><th>Status</th></tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
-      <div class="panel">
-        <h3>Motoristas</h3>
-        <div class="desc">Ordenados por número de eventos, com a quantidade de veículos operados.</div>
-        <div style="max-height:420px;overflow:auto;">
-          <table id="tableDrivers">
-            <thead><tr><th>Motorista</th><th class="num">Eventos</th><th class="num">Veículos</th><th class="num">Vel. média</th><th>Perfil</th><th>Status</th></tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- 07 consistência -->
-    <div class="section-head reveal">
-      <span class="num">07</span><h2>Consistência do motorista entre veículos</h2>
-      <span class="hint">comportamento ou máquina?</span>
+      <span class="num">06</span><h2>Consistência do evento</h2>
     </div>
     <div class="panel" style="margin-bottom:20px;">
-      <div class="desc">
-        Para motoristas com 2+ veículos, comparamos a taxa de <b>eventos/dia</b> em cada veículo e calculamos o desvio padrão.
-        <b>Desvio baixo</b> → o motorista mantém o mesmo ritmo em qualquer veículo (fator dominante: <b>comportamento</b>).
-        <b>Desvio alto</b> → a taxa muda muito entre veículos (fator dominante: <b>veículo</b> — possível problema mecânico, calibração ou rota).
+
+      <!-- resumo executivo -->
+      <div id="depSummary" class="dep-summary"></div>
+
+      <!-- legenda + filtros -->
+      <div class="dep-controls">
+        <div class="dep-legend">
+          <span><span class="dot" style="background:var(--crimson);"></span> Veículo · concentração alta em um veículo específico</span>
+          <span><span class="dot" style="background:var(--amber);"></span> Misto · influência dividida entre veículo e comportamento</span>
+          <span><span class="dot" style="background:var(--green);"></span> Motorista · padrão semelhante em vários veículos</span>
+        </div>
+        <div class="dep-filters" id="depFilters">
+          <button class="dep-fbtn active" data-f="all">Todos</button>
+          <button class="dep-fbtn" data-f="veiculo">Veículo</button>
+          <button class="dep-fbtn" data-f="misto">Misto</button>
+          <button class="dep-fbtn" data-f="motorista">Motorista</button>
+        </div>
       </div>
-      <div style="max-height:420px;overflow:auto;">
+
+      <div style="max-height:460px;overflow:auto;">
         <table id="tableDriverConsistency">
-          <thead><tr><th>Motorista</th><th class="num">Veículos</th><th class="num">Eventos/dia médio</th><th class="num">Desvio padrão</th><th>Por veículo (eventos/dia)</th><th>Padrão</th></tr></thead>
+          <thead><tr>
+            <th>Motorista</th>
+            <th class="num">Veículos</th>
+            <th class="num">Total eventos</th>
+            <th class="num">Eventos/dia médio</th>
+            <th>Por veículo (eventos)</th>
+            <th class="num">Dependência do Veículo
+              <span class="info-tip" tabindex="0">&#9432;<span class="info-pop">Dependência do Veículo mede se os eventos do motorista se concentram em um veículo específico. O cálculo considera concentração, variação entre veículos, contraste com o padrão normal e quantidade de veículos analisados.</span></span>
+            </th>
+            <th>Diagnóstico</th>
+          </tr></thead>
           <tbody></tbody>
         </table>
       </div>
     </div>
 
-    <!-- 08 recomendações -->
+    <!-- 07 resumo executivo -->
     <div class="section-head reveal">
-      <span class="num">08</span><h2>Recomendações de calibração</h2>
-      <span class="hint">% do pedal e tempo do evento</span>
+      <span class="num">07</span><h2>Resumo executivo e recomendações</h2>
     </div>
+    <div id="execSummary"></div>
     <div class="insight amber" id="paramInsight"></div>
 
   </div>
@@ -641,8 +739,32 @@ document.getElementById('applyFilters').addEventListener('click', function(){
   let filtered = rawData;
   if(codigo) filtered = filtered.filter(r=>r.codigo===codigo);
   if(motorista) filtered = filtered.filter(r=>r.motorista===motorista);
+
+  if(!filtered.length){
+    document.getElementById('dashboard').classList.add('hidden');
+    const es = document.getElementById('emptyState');
+    es.classList.remove('hidden');
+    let msg = 'Nenhum registro corresponde aos filtros selecionados.';
+    if(codigo && motorista){
+      msg = `Não existem eventos para o motorista <b>${motorista}</b> no veículo <b>${codigo}</b>. Essa combinação não possui dados no período.`;
+    }
+    es.innerHTML = `<h2>Sem dados para essa relação</h2><p>${msg}</p>
+      <button class="btn-apply" id="backToInitial" style="margin-top:18px;">Voltar ao início</button>`;
+    document.getElementById('backToInitial').addEventListener('click', resetSelection);
+    return;
+  }
   renderDashboard(filtered);
 });
+
+// volta o dashboard ao estado inicial (toda a frota, todos os motoristas)
+function resetSelection(){
+  document.getElementById('filterCodigo').value = '';
+  document.getElementById('filterMotorista').value = '';
+  document.getElementById('emptyState').classList.add('hidden');
+  renderDashboard(rawData);
+}
+document.getElementById('clearFilters').addEventListener('click', resetSelection);
+document.getElementById('severityClear').addEventListener('click', clearSeveritySelection);
 
 function populateFilters(){
   const codigos = [...new Set(rawData.map(r=>r.codigo))].sort();
@@ -698,7 +820,7 @@ function renderDashboard(data){
     const min = new Date(Math.min(...dates)), max = new Date(Math.max(...dates));
     const fmt = d=>d.toLocaleDateString('pt-BR');
     document.getElementById('period-label').textContent =
-      `${fmt(min)} — ${fmt(max)} · ${data.length} eventos · ${new Set(data.map(r=>r.codigo)).size} veículos · ${new Set(data.map(r=>r.motorista)).size} motoristas`;
+      `${fmt(min)} a ${fmt(max)} · ${data.length} eventos · ${new Set(data.map(r=>r.codigo)).size} veículos · ${new Set(data.map(r=>r.motorista)).size} motoristas`;
   }
 
   renderHero(data);
@@ -710,9 +832,9 @@ function renderDashboard(data){
   renderHeatmap(data);
   renderSeverity(data);
   renderVehicleRankings(data);
-  renderFullTables(data);
   renderDriverConsistency(data);
   renderParamAnalysis(data);
+  renderExecSummary(data);
 }
 
 /* ===== HERO ===== */
@@ -721,6 +843,7 @@ function renderHero(data){
   const counts = bandCounts(data);
   const arr = counts[0]+counts[1], mov = counts[2]+counts[3];
   const arrPct = arr/total*100;
+  const critPct = counts[3]/total*100;  // eventos 50+ km/h — os mais críticos
 
   if(charts.gauge) charts.gauge.destroy();
   charts.gauge = new Chart(document.getElementById('gaugeChart'), {
@@ -742,7 +865,7 @@ function renderHero(data){
       animation:{animateRotate:true, duration:1100}
     }
   });
-  animateCount(document.getElementById('gaugePct'), arrPct, '%', 0);
+  animateCount(document.getElementById('gaugePct'), critPct, '%', 0);
 
   const vGroups = groupBy(data,'codigo'), dGroups = groupBy(data,'motorista');
   const worstV = Object.entries(vGroups).sort((a,b)=>b[1].length-a[1].length)[0];
@@ -752,15 +875,16 @@ function renderHero(data){
   let titulo, texto;
   if(arrPct >= 60){
     titulo = `A frota concentra os eventos na <span class="hl">arrancada</span>`;
-    texto = `${arrPct.toFixed(1)}% dos ${total.toLocaleString('pt-BR')} eventos ocorrem entre 0 e 30 km/h — o uso intenso do pedal está ligado à saída e retomada, não à condução em movimento. `;
+    texto = `${arrPct.toFixed(1)}% dos ${total.toLocaleString('pt-BR')} eventos ocorrem entre 0 e 30 km/h. O uso intenso do pedal está ligado à saída e retomada, não à condução em movimento. `;
   } else if(arrPct >= 40){
     titulo = `Eventos <span class="hl">divididos</span> entre arrancada e movimento`;
     texto = `O período mostra um perfil misto: ${arrPct.toFixed(1)}% dos eventos na arrancada e ${(100-arrPct).toFixed(1)}% com o veículo já em movimento. Ambas as frentes merecem atenção. `;
   } else {
     titulo = `O excesso acontece com o veículo <span class="hl">em movimento</span>`;
-    texto = `${(100-arrPct).toFixed(1)}% dos eventos ocorrem acima de 30 km/h — perfil de condução agressiva fora da arrancada, com impacto direto no consumo. `;
+    texto = `${(100-arrPct).toFixed(1)}% dos eventos ocorrem acima de 30 km/h. Perfil de condução agressiva fora da arrancada, com impacto direto no consumo. `;
   }
   texto += `O veículo <span class="tag">${worstV[0]}</span> lidera com <b>${worstV[1].length}</b> eventos (média da frota: ${avgPerV}/veículo) e o motorista <span class="tag">${worstD[0]}</span> registra <b>${worstD[1].length}</b> ocorrências.`;
+  texto += ` <b style="color:var(--crimson);">${critPct.toFixed(1)}% dos eventos são críticos (50+ km/h)</b>, ${counts[3].toLocaleString('pt-BR')} ocorrências em alta velocidade, a faixa de maior impacto no consumo e no risco.`;
 
   document.getElementById('heroTitle').innerHTML = titulo;
   document.getElementById('heroText').innerHTML = texto;
@@ -936,7 +1060,7 @@ function renderHeatmap(data){
 }
 
 /* ===== severity ===== */
-function severityRow(id, rows, maxScore, onClick, mono){
+function severityRow(id, rows, maxScore, onClick, mono, extraCells){
   const counts = bandCounts(rows);
   const score = counts.reduce((s,c,i)=>s+c*SPEED_BANDS[i].weight,0);
   let cls='good', label='Bom';
@@ -945,6 +1069,7 @@ function severityRow(id, rows, maxScore, onClick, mono){
   return `<tr ${onClick?`style="cursor:pointer;" onclick="${onClick}"`:''}>
     <td>${mono?`<span class="code">${id}</span>`:id}</td>
     <td class="num">${rows.length}</td>
+    ${extraCells||''}
     <td>${profileBar(counts, rows.length)}</td>
     <td><span class="badge ${cls}">${label}</span></td>
   </tr>`;
@@ -959,11 +1084,24 @@ function renderSeverity(data){
   const maxV = vList.length?vList[0].s:1, maxD = dList.length?dList[0].s:1;
 
   document.querySelector('#tableSeverityVehicles tbody').innerHTML =
-    vList.map(v=>severityRow(v.k, vGroups[v.k], maxV, `renderSeverityDriversForVehicle('${v.k.replace(/'/g,"\\'")}')`, true)).join('');
+    vList.map(v=>{
+      const rows = vGroups[v.k];
+      const avgSpeed = +(rows.reduce((s,r)=>s+r.velocidade,0)/rows.length).toFixed(1);
+      const avgRpm = Math.round(rows.reduce((s,r)=>s+r.rpm,0)/rows.length);
+      const extra = `<td class="num">${avgSpeed}</td><td class="num">${avgRpm}</td>`;
+      return severityRow(v.k, rows, maxV, `renderSeverityDriversForVehicle('${v.k.replace(/'/g,"\\'")}')`, true, extra);
+    }).join('');
 
   document.getElementById('severityDriversTitle').textContent = 'Motoristas (ranking geral)';
+  const sc = document.getElementById('severityClear'); if(sc) sc.classList.add('hidden');
   document.querySelector('#tableSeverityDrivers tbody').innerHTML =
-    dList.map(d=>severityRow(d.k, dGroups[d.k], maxD, null, false)).join('');
+    dList.map(d=>{
+      const rows = dGroups[d.k];
+      const veiculos = new Set(rows.map(r=>r.codigo)).size;
+      const avgSpeed = +(rows.reduce((s,r)=>s+r.velocidade,0)/rows.length).toFixed(1);
+      const extra = `<td class="num">${veiculos}</td><td class="num">${avgSpeed}</td>`;
+      return severityRow(d.k, rows, maxD, null, false, extra);
+    }).join('');
 }
 
 function renderSeverityDriversForVehicle(codigo){
@@ -973,8 +1111,21 @@ function renderSeverityDriversForVehicle(codigo){
   const dList = Object.keys(dGroups).map(k=>({k, s:score(dGroups[k])})).sort((a,b)=>b.s-a.s);
   const maxD = dList.length?dList[0].s:1;
   document.getElementById('severityDriversTitle').textContent = `Motoristas do veículo ${codigo}`;
+  document.getElementById('severityClear').classList.remove('hidden');
   document.querySelector('#tableSeverityDrivers tbody').innerHTML =
-    dList.map(d=>severityRow(d.k, dGroups[d.k], maxD, null, false)).join('');
+    dList.map(d=>{
+      const dr = dGroups[d.k];
+      const veiculos = new Set(dr.map(r=>r.codigo)).size;
+      const avgSpeed = +(dr.reduce((s,r)=>s+r.velocidade,0)/dr.length).toFixed(1);
+      const extra = `<td class="num">${veiculos}</td><td class="num">${avgSpeed}</td>`;
+      return severityRow(d.k, dr, maxD, null, false, extra);
+    }).join('');
+}
+
+// restaura o ranking geral de motoristas no severity
+function clearSeveritySelection(){
+  document.getElementById('severityClear').classList.add('hidden');
+  renderSeverity(currentData);
 }
 
 /* ===== rankings ===== */
@@ -1009,7 +1160,10 @@ function renderVehicleDrivers(data, codigo, targetId){
   const dStats = Object.entries(groupBy(rows,'motorista')).map(([m,r])=>({m, t:r.length})).sort((a,b)=>b.t-a.t);
   const maxT = dStats[0]?dStats[0].t:1;
   document.getElementById(targetId).innerHTML = `
-    <div class="desc" style="margin-bottom:10px;">Motoristas de <span class="code" style="color:var(--amber);">${codigo}</span> · ${rows.length} eventos</div>
+    <div class="desc" style="margin-bottom:10px;display:flex;align-items:center;gap:10px;justify-content:space-between;">
+      <span>Motoristas de <span class="code" style="color:var(--amber);">${codigo}</span> · ${rows.length} eventos</span>
+      <button class="btn-mini" onclick="clearExtremesSelection('${targetId}')">Limpar seleção</button>
+    </div>
     <div style="max-height:270px;overflow:auto;">
     <table>
       <thead><tr><th>Motorista</th><th class="num">Eventos</th><th style="width:38%;"></th></tr></thead>
@@ -1020,63 +1174,24 @@ function renderVehicleDrivers(data, codigo, targetId){
     </table></div>`;
 }
 
-/* ===== full tables ===== */
-function renderFullTables(data){
-  const vGroups = groupBy(data,'codigo');
-  const vStats = Object.entries(vGroups).map(([codigo,rows])=>{
-    const total = rows.length;
-    return {
-      codigo, total,
-      avgSpeed:+(rows.reduce((s,r)=>s+r.velocidade,0)/total).toFixed(1),
-      avgRpm:Math.round(rows.reduce((s,r)=>s+r.rpm,0)/total),
-      counts:bandCounts(rows)
-    };
-  }).sort((a,b)=>b.total-a.total);
-  const maxV = vStats[0].total;
-
-  document.querySelector('#tableVehicles tbody').innerHTML = vStats.map(s=>{
-    let cls='good', label='Bom';
-    if(s.total>=maxV*0.66){cls='danger';label='Crítico';}
-    else if(s.total>=maxV*0.33){cls='warn';label='Atenção';}
-    return `<tr>
-      <td><span class="code">${s.codigo}</span></td>
-      <td class="num">${s.total}</td>
-      <td class="num">${s.avgSpeed}</td>
-      <td class="num">${s.avgRpm}</td>
-      <td>${profileBar(s.counts, s.total)}</td>
-      <td><span class="badge ${cls}">${label}</span></td></tr>`;
-  }).join('');
-
-  const dGroups = groupBy(data,'motorista');
-  const dStats = Object.entries(dGroups).map(([motorista,rows])=>{
-    const total = rows.length;
-    return {
-      motorista, total,
-      veiculos:new Set(rows.map(r=>r.codigo)).size,
-      avgSpeed:+(rows.reduce((s,r)=>s+r.velocidade,0)/total).toFixed(1),
-      counts:bandCounts(rows)
-    };
-  }).sort((a,b)=>b.total-a.total);
-  const maxD = dStats[0].total;
-
-  document.querySelector('#tableDrivers tbody').innerHTML = dStats.map(s=>{
-    let cls='good', label='Bom';
-    if(s.total>=maxD*0.66){cls='danger';label='Crítico';}
-    else if(s.total>=maxD*0.33){cls='warn';label='Atenção';}
-    return `<tr>
-      <td>${s.motorista}</td>
-      <td class="num">${s.total}</td>
-      <td class="num">${s.veiculos}</td>
-      <td class="num">${s.avgSpeed}</td>
-      <td>${profileBar(s.counts, s.total)}</td>
-      <td><span class="badge ${cls}">${label}</span></td></tr>`;
-  }).join('');
+// restaura o placeholder do painel de extremos
+function clearExtremesSelection(targetId){
+  document.getElementById(targetId).innerHTML =
+    '<div class="desc" style="padding:30px 10px;text-align:center;">Clique em uma barra do gráfico ao lado<br>para listar os motoristas do veículo.</div>';
 }
 
 /* ===== consistency ===== */
+let depResults = [];        // resultados calculados (escopo p/ filtros)
+let depFilter = 'all';
+
 function renderDriverConsistency(data){
   const dGroups = groupBy(data,'motorista');
-  const results = [];
+  depResults = [];
+
+  // span do período analisado (mesmo denominador para todos = comparável e correto)
+  const allTs = data.map(r=>r.date).filter(Boolean).map(d=>d.getTime());
+  let periodDays = 1;
+  if(allTs.length>1) periodDays = Math.max(1, Math.round((Math.max(...allTs)-Math.min(...allTs))/86400000)+1);
 
   Object.entries(dGroups).forEach(([motorista, driverRows])=>{
     const byV = groupBy(driverRows,'codigo');
@@ -1086,41 +1201,157 @@ function renderDriverConsistency(data){
     const rates = [], details = [];
     keys.forEach(codigo=>{
       const vr = byV[codigo];
-      const ts = vr.map(r=>r.date).filter(Boolean).map(d=>d.getTime());
-      let span = 1;
-      if(ts.length>1) span = Math.max(1, Math.round((Math.max(...ts)-Math.min(...ts))/86400000)+1);
-      const rate = +(vr.length/span).toFixed(2);
+      const rate = +(vr.length/periodDays).toFixed(2);  // eventos por dia no período
       rates.push(rate);
-      details.push({codigo, rate});
+      details.push({codigo, rate, count:vr.length});
     });
 
-    const mean = rates.reduce((s,v)=>s+v,0)/rates.length;
-    const std = Math.sqrt(rates.reduce((s,v)=>s+(v-mean)**2,0)/rates.length);
-    results.push({motorista, n:keys.length, mean:+mean.toFixed(2), std:+std.toFixed(2),
-      details:details.sort((a,b)=>b.rate-a.rate)});
+    details.sort((a,b)=>b.rate-a.rate);
+    const total = driverRows.length;
+    const qtd = rates.length;
+    const eventosDia = +(total/periodDays).toFixed(2);   // total de eventos / dias do período
+
+    // ===== métricas base (backend, não exibidas cruas) =====
+    const totalRate = rates.reduce((s,v)=>s+v,0);
+    const max = Math.max(...rates);
+    const mean = totalRate/qtd;
+    const sorted = [...rates].sort((a,b)=>a-b);
+    const mid = Math.floor(sorted.length/2);
+    const median = sorted.length%2 ? sorted[mid] : (sorted[mid-1]+sorted[mid])/2;
+    const std = Math.sqrt(rates.reduce((s,v)=>s+(v-mean)**2,0)/qtd);
+
+    // ===== componentes do score =====
+    const concentracao = totalRate>0 ? max/totalRate : 0;          // peso .40
+    const cv = mean>0 ? std/mean : 0;
+    const dispersao = Math.min(cv/1.5, 1);                          // peso .30
+    const contraste = max>0 ? 1 - median/max : 0;                  // peso .20
+    const confianca = Math.min(qtd/6, 1);                          // peso .10
+
+    const dep = (concentracao*0.40)+(dispersao*0.30)+(contraste*0.20)+(confianca*0.10);
+    const depPct = Math.round(dep*100);
+    const prioridade = depPct*total;
+
+    depResults.push({
+      motorista, n:qtd, total, mean:eventosDia, depPct, prioridade,
+      details, std:+std.toFixed(2), cv:+cv.toFixed(2)
+    });
   });
 
-  results.sort((a,b)=>b.std-a.std);
+  renderDepSummary();
+  renderDepRows();
+}
+
+function depClass(p){
+  if(p>=75) return {cls:'danger', diag:'Veículo'};
+  if(p>=50) return {cls:'warn',   diag:'Misto'};
+  return {cls:'good', diag:'Motorista'};
+}
+
+function renderDepSummary(){
+  const el = document.getElementById('depSummary');
+  if(!depResults.length){ el.innerHTML = 'Nenhum motorista operou 2 ou mais veículos neste conjunto de dados.'; return; }
+  const tot = depResults.length;
+  const veic = depResults.filter(r=>r.depPct>=75).length;
+  const mist = depResults.filter(r=>r.depPct>=50 && r.depPct<75).length;
+  const moto = depResults.filter(r=>r.depPct<50).length;
+
+  // veículo crítico mais recorrente entre os casos de dependência (Veículo + Misto),
+  // ponderado pela quantidade real de eventos, não só pela taxa
+  const crit = {};
+  depResults.filter(r=>r.depPct>=50).forEach(r=>{
+    const d0 = r.details[0];
+    if(!crit[d0.codigo]) crit[d0.codigo] = {motoristas:0, eventos:0};
+    crit[d0.codigo].motoristas += 1;
+    crit[d0.codigo].eventos += (d0.count||0);
+  });
+  const topCrit = Object.entries(crit).sort((a,b)=> b[1].eventos-a[1].eventos || b[1].motoristas-a[1].motoristas)[0];
+
+  let txt = `Dos <b>${tot}</b> motoristas analisados, <b class="sx" style="color:var(--crimson);">${veic}</b> apresentam forte dependência de veículo`;
+  txt += `, <b class="sx" style="color:var(--amber);">${mist}</b> ficam em caso misto e <b class="sx" style="color:var(--green);">${moto}</b> indicam padrão do próprio motorista.`;
+  if(topCrit){
+    txt += ` O veículo <b>${topCrit[0]}</b> concentra o maior volume de eventos nesses casos (${topCrit[1].eventos.toLocaleString('pt-BR')} eventos em ${topCrit[1].motoristas} ${topCrit[1].motoristas===1?'motorista':'motoristas'}).`;
+  }
+  el.innerHTML = txt;
+}
+
+function renderDepRows(){
   const tbody = document.querySelector('#tableDriverConsistency tbody');
-  if(!results.length){
-    tbody.innerHTML = '<tr><td colspan="6">Nenhum motorista operou 2 ou mais veículos neste conjunto de dados.</td></tr>';
+  if(!depResults.length){
+    tbody.innerHTML = '<tr><td colspan="7">Nenhum motorista operou 2 ou mais veículos neste conjunto de dados.</td></tr>';
     return;
   }
-  const maxStd = results[0].std || 1;
 
-  tbody.innerHTML = results.map(r=>{
-    let cls='good', label='Consistente · motorista';
-    if(r.std>=maxStd*0.5){cls='danger';label='Inconsistente · veículo';}
-    else if(r.std>=maxStd*0.2){cls='warn';label='Parcial';}
-    return `<tr>
+  // filtro
+  let rows = depResults.slice();
+  if(depFilter==='veiculo')   rows = rows.filter(r=>r.depPct>=75);
+  else if(depFilter==='misto')    rows = rows.filter(r=>r.depPct>=50 && r.depPct<75);
+  else if(depFilter==='motorista')rows = rows.filter(r=>r.depPct<50);
+
+  // ordenação padrão por dependência e depois volume
+  rows.sort((a,b)=> b.depPct-a.depPct || b.total-a.total);
+
+  if(!rows.length){
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--faint);padding:24px;">Nenhum motorista neste filtro.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = rows.map(r=>{
+    const {cls, diag:diagLabel} = depClass(r.depPct);
+    const dColor = cls==='danger'?'var(--crimson)':cls==='warn'?'var(--amber)':'var(--green)';
+
+    const top = r.details[0];
+    const rest = r.details.slice(1);
+    const restMaxC = rest.length ? Math.max(...rest.map(d=>d.count)) : 0;
+    const restMinC = rest.length ? Math.min(...rest.map(d=>d.count)) : 0;
+    const fmt = n => (+n).toLocaleString('pt-BR');
+
+    // diagnóstico textual padronizado (em total de eventos, mais intuitivo)
+    let diag;
+    if(cls==='danger'){
+      diag=`Eventos concentrados no <b>${top.codigo}</b> (${fmt(top.count)} eventos). Restante da frota entre ${fmt(restMinC)} e ${fmt(restMaxC)}. Forte evidência de dependência do veículo. Investigar mecânica, calibração, sensor ou rota.`;
+    } else if(cls==='warn'){
+      diag=`O <b>${top.codigo}</b> (${fmt(top.count)} eventos) concentra mais que os demais (${fmt(restMinC)} a ${fmt(restMaxC)}). Há indícios de influência do veículo, mas também pode existir comportamento do motorista.`;
+    } else {
+      diag=`Eventos distribuídos entre veículos (${fmt(restMinC||top.count)} a ${fmt(top.count)}). O padrão indica comportamento recorrente do motorista.`;
+    }
+
+    // chips por veículo: barra proporcional ao volume, mostra total de eventos
+    const maxCount = top.count || 1;
+    const SHOWN = 5;
+    const chips = r.details.slice(0, SHOWN).map((d,i)=>{
+      const w = Math.max(6, (d.count/maxCount*100));
+      const fill = i===0 ? 'var(--crimson)' : 'var(--blue)';
+      return `<div class="vchip${i===0?' top':''}" title="${fmt(d.rate)} eventos/dia"><span class="code">${d.codigo}</span><span class="track"><span class="fill" style="width:${w}%;background:${fill};"></span></span><span class="rate">${fmt(d.count)}</span></div>`;
+    }).join('');
+    const overflow = r.details.length>SHOWN ? `<div class="vchip" style="color:var(--faint);font-style:italic;">+${r.details.length-SHOWN} veículos</div>` : '';
+
+    const barColor = cls==='danger'?'var(--crimson)':cls==='warn'?'var(--amber)':'var(--green)';
+
+    return `<tr title="Detalhe técnico · desvio padrão das taxas: ${r.std} | CV: ${r.cv}">
       <td>${r.motorista}</td>
       <td class="num">${r.n}</td>
-      <td class="num">${r.mean}</td>
-      <td class="num">${r.std}</td>
-      <td style="font-family:var(--mono);font-size:11px;color:var(--muted);">${r.details.map(d=>`${d.codigo}: ${d.rate}`).join(' · ')}</td>
-      <td><span class="badge ${cls}">${label}</span></td></tr>`;
+      <td class="num">${fmt(r.total)}</td>
+      <td class="num">${fmt(r.mean)}</td>
+      <td><div class="vchips">${chips}${overflow}</div></td>
+      <td>
+        <div class="depscore ${cls}">
+          <span class="pct">${r.depPct}% ${diagLabel}</span>
+          <span class="track"><span class="fill" style="width:${r.depPct}%;background:${barColor};"></span></span>
+        </div>
+      </td>
+      <td style="font-size:12.5px;line-height:1.55;color:var(--muted);min-width:300px;border-left:3px solid ${dColor};padding-left:11px;">${diag}</td></tr>`;
   }).join('');
 }
+
+// filtros rápidos
+document.addEventListener('click', e=>{
+  const btn = e.target.closest('.dep-fbtn');
+  if(!btn) return;
+  document.querySelectorAll('.dep-fbtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  depFilter = btn.dataset.f;
+  renderDepRows();
+});
 
 /* ===== param analysis ===== */
 function renderParamAnalysis(data){
@@ -1133,16 +1364,96 @@ function renderParamAnalysis(data){
   if(arrPct >= 60){
     msg += `<span class="tag">${arrPct}%</span> dos eventos ocorrem na faixa 0–30 km/h, ou seja, durante a <b>arrancada e retomadas</b>.
     Parte desses disparos pode refletir a necessidade real de torque (subidas, veículo carregado) e não má condução.
-    <br><br><b>Recomendação de calibração:</b> avalie <b>aumentar o tempo mínimo</b> de pedal pressionado para gerar o evento — isso filtra picos curtos típicos de arrancada e mantém o foco no uso prolongado do acelerador.
+    <br><br><b>Recomendação de calibração:</b> avalie <b>aumentar o tempo mínimo</b> de pedal pressionado para gerar o evento. Isso filtra picos curtos típicos de arrancada e mantém o foco no uso prolongado do acelerador.
     Outra opção é aplicar maior tolerância de % do pedal em velocidades abaixo de 30 km/h, mantendo o parâmetro atual apenas para o veículo em movimento.`;
   } else if(arrPct >= 40){
     msg += `O perfil é misto: <span class="tag">${arrPct}%</span> dos eventos na arrancada e <span class="tag">${movPct}%</span> com o veículo já em movimento.
-    <br><br><b>Recomendação de calibração:</b> mantenha os parâmetros atuais por mais um ciclo e concentre a ação nos veículos e motoristas marcados como <b>Crítico</b> — o ranking de severidade indica onde o evento em alta velocidade se concentra. Reavalie a calibração no próximo período com o mesmo painel.`;
+    <br><br><b>Recomendação de calibração:</b> mantenha os parâmetros atuais por mais um ciclo e concentre a ação nos veículos e motoristas marcados como <b>Crítico</b>. O ranking de severidade indica onde o evento em alta velocidade se concentra. Reavalie a calibração no próximo período com o mesmo painel.`;
   } else {
-    msg += `<span class="tag">${movPct}%</span> dos eventos ocorrem acima de 30 km/h, com o veículo já em movimento — perfil de <b>condução agressiva fora da arrancada</b>, que é o cenário de maior impacto direto no consumo.
+    msg += `<span class="tag">${movPct}%</span> dos eventos ocorrem acima de 30 km/h, com o veículo já em movimento. Perfil de <b>condução agressiva fora da arrancada</b>, que é o cenário de maior impacto direto no consumo.
     <br><br><b>Recomendação de calibração:</b> os parâmetros atuais estão capturando bem o comportamento-alvo. Considere <b>reduzir levemente o tempo</b> do evento para ganhar sensibilidade e detectar excessos mais cedo, e direcione o treinamento prioritariamente aos itens marcados como <b>Crítico</b> no ranking de severidade.`;
   }
   document.getElementById('paramInsight').innerHTML = msg;
+}
+
+/* ===== resumo executivo dinâmico ===== */
+function renderExecSummary(data){
+  const el = document.getElementById('execSummary');
+  if(!data.length){ el.innerHTML=''; return; }
+
+  const sev = rows => bandCounts(rows).reduce((s,c,i)=>s+c*SPEED_BANDS[i].weight,0);
+  const fmt = n => (+n).toLocaleString('pt-BR');
+
+  // ---- veículos (piores por severidade) ----
+  const vG = groupBy(data,'codigo');
+  const vStats = Object.entries(vG).map(([codigo,rows])=>{
+    const counts = bandCounts(rows);
+    return {codigo, total:rows.length, sev:sev(rows), crit:counts[3],
+      critPct:+(counts[3]/rows.length*100).toFixed(0)};
+  });
+  const vBad = [...vStats].sort((a,b)=>b.sev-a.sev).slice(0,5);
+
+  // ---- motoristas (piores por severidade) ----
+  const dG = groupBy(data,'motorista');
+  const dStats = Object.entries(dG).map(([motorista,rows])=>{
+    const counts = bandCounts(rows);
+    return {motorista, total:rows.length, sev:sev(rows), crit:counts[3]};
+  });
+  const dBad = [...dStats].sort((a,b)=>b.sev-a.sev).slice(0,5);
+
+  // ---- veículos suspeitos (dependência do veículo) ----
+  const suspMap = {};
+  (depResults||[]).filter(r=>r.depPct>=50).forEach(r=>{
+    const d0 = r.details[0];
+    if(!suspMap[d0.codigo]) suspMap[d0.codigo] = {motoristas:0, eventos:0, maxDep:0};
+    suspMap[d0.codigo].motoristas += 1;
+    suspMap[d0.codigo].eventos += (d0.count||0);
+    suspMap[d0.codigo].maxDep = Math.max(suspMap[d0.codigo].maxDep, r.depPct);
+  });
+  const suspeitos = Object.entries(suspMap)
+    .map(([codigo,v])=>({codigo, ...v}))
+    .sort((a,b)=> b.eventos-a.eventos || b.maxDep-a.maxDep)
+    .slice(0,5);
+
+  const liItem = (lbl, val) => `<li><span class="lbl">${lbl}</span><span class="val">${val}</span></li>`;
+  const emptyLi = txt => `<li><span class="empty">${txt}</span></li>`;
+
+  const secVBad = `<div class="exec-sec bad"><h4>&#9650; Veículos que mais preocupam</h4><ul class="exec-list">${
+    vBad.length ? vBad.map(v=>liItem(`<span class="code">${v.codigo}</span>`, `${fmt(v.total)} eventos · ${v.critPct}% a 50+`)).join('') : emptyLi('Sem dados')
+  }</ul></div>`;
+
+  const secDBad = `<div class="exec-sec bad"><h4>&#9650; Motoristas que mais preocupam</h4><ul class="exec-list">${
+    dBad.length ? dBad.map(d=>liItem(d.motorista, `${fmt(d.total)} eventos`)).join('') : emptyLi('Sem dados')
+  }</ul></div>`;
+
+  const secSusp = `<div class="exec-sec watch" style="grid-column:1/-1;"><h4>&#9888; Veículos que chamam atenção (possível problema mecânico, calibração, sensor ou rota)</h4><ul class="exec-list">${
+    suspeitos.length ? suspeitos.map(s=>liItem(
+      `<span class="code">${s.codigo}</span>`,
+      `${fmt(s.eventos)} eventos concentrados · ${s.motoristas} ${s.motoristas===1?'motorista':'motoristas'} · até ${s.maxDep}% dependência`
+    )).join('') : emptyLi('Nenhum veículo com dependência alta neste período. Os eventos seguem o padrão dos motoristas.')
+  }</ul></div>`;
+
+  // ===== bloco de ação (onde atacar) =====
+  const topV = vBad[0], topD = dBad[0], topS = suspeitos[0];
+  const counts = bandCounts(data);
+  const critPctGeral = +(counts[3]/data.length*100).toFixed(1);
+
+  let acoes = [];
+  if(topV) acoes.push(`<b>Inspecionar o veículo <span class="code">${topV.codigo}</span></b>, o de maior severidade (${fmt(topV.total)} eventos, ${topV.critPct}% acima de 50 km/h).`);
+  if(topS) acoes.push(`<b>Investigar mecânica/calibração do <span class="code">${topS.codigo}</span></b>: a tabela de consistência aponta concentração anormal de eventos ligada ao veículo, não ao motorista.`);
+  if(topD) acoes.push(`<b>Conversar/treinar ${topD.motorista}</b>, motorista com maior severidade no período (${fmt(topD.total)} eventos).`);
+  if(critPctGeral>=25) acoes.push(`<b>Atenção aos eventos críticos:</b> ${critPctGeral}% de todos os eventos estão acima de 50 km/h, a faixa de maior impacto no consumo e risco.`);
+
+  const acaoBlock = `<div class="exec-action">
+    <b>Onde atacar primeiro neste período:</b>
+    <ol>${acoes.map(a=>`<li>${a}</li>`).join('')}</ol>
+  </div>`;
+
+  // ===== card único consolidado =====
+  el.innerHTML = `<div class="exec-card-single">
+    <div class="exec-grid">${secVBad}${secDBad}${secSusp}</div>
+    ${acaoBlock}
+  </div>`;
 }
 </script>
 
