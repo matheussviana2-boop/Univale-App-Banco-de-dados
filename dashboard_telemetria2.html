@@ -6,7 +6,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Telemetria · Univale</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
@@ -4037,7 +4036,7 @@ header h1{
     </div>
   </div>
 </header>
-<div id="loading" class="wrap"><div class="spinner"></div><p style="font-size:14px;color:var(--muted)">Buscando dados da planilha...</p></div>
+<div id="loading" class="wrap"><div class="spinner"></div><p style="font-size:14px;color:var(--muted)">Buscando dados da planilha publicada...</p></div>
 <div id="error" class="wrap" style="display:none"><div class="err-icon">⚠️</div><h3>Não foi possível carregar os dados</h3><p id="errMsg"></p></div>
 <div id="app" style="display:none">
   <main><div class="wrap content-wrap">
@@ -4139,7 +4138,7 @@ header h1{
   <footer><div class="wrap">Univale Transportes - Telemetria Operacional - CSC</div></footer>
 </div>
 <script>
-var SHEET_URL='https://docs.google.com/spreadsheets/d/11jw5uFKuKcOVE5Jxgf1MsCyOXZPYXra1/export?format=xlsx';
+var SHEET_URL='https://docs.google.com/spreadsheets/d/e/2PACX-1vS2Efnq4_cVKEP4IS9WO0-lasxwjjCCxJkWJ7P3hrI68Tlim5iOePt3VLEqcwX37g/pub?gid=267958652&single=true&output=csv';
 var SETOR_FIXO='';
 var MESES=["JAN","FEV","MAR","ABR","MAI","JUN","JUL","AGO","SET","OUT","NOV","DEZ"];
 var MESES_FULL={JAN:"Janeiro",FEV:"Fevereiro",MAR:"Março",ABR:"Abril",MAI:"Maio",JUN:"Junho",JUL:"Julho",AGO:"Agosto",SET:"Setembro",OUT:"Outubro",NOV:"Novembro",DEZ:"Dezembro"};
@@ -4227,26 +4226,120 @@ function dFor(n){return DIAG[n]||{eixo:'Manutenção',cor:'ic-teal-l',icon:'·',
 function eBadge(e){return e==='Segurança'?'b-seg':e==='Economia'?'b-eco':'b-man'}
 function fCode(url){if(!url)return null;var m=String(url).match(/detailsProcessInstanceID=(\d+)/i);return m?m[1]:(String(url).match(/(\d+)\D*$/)||[null,null])[1]}
 function getSetor(){if(SETOR_FIXO)return SETOR_FIXO;var p=new URLSearchParams(window.location.search);return(p.get('setor')||p.get('s')||'').trim().toUpperCase()}
-function showErr(msg){document.getElementById('loading').style.display='none';document.getElementById('error').style.display='flex';document.getElementById('errMsg').innerHTML=msg}
-function loadSheet(){
-  fetch(SHEET_URL)
-    .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.arrayBuffer()})
-    .then(function(buf){var wb=XLSX.read(new Uint8Array(buf),{type:'array'});init(wb)})
-    .catch(function(e){showErr('Não foi possível carregar a planilha.<br><small>'+e.message+'</small>')})
+function showErr(msg){
+  var loading=document.getElementById('loading'), error=document.getElementById('error'), err=document.getElementById('errMsg');
+  if(loading)loading.style.display='none';
+  if(error)error.style.display='flex';
+  if(err)err.innerHTML=msg;
 }
-function init(wb){
-  var ws=wb.Sheets['DADOS_MOTORISTAS'];
-  if(!ws){showErr('Aba DADOS_MOTORISTAS não encontrada.');return}
-  var rows=XLSX.utils.sheet_to_json(ws);
+function showApp(){
+  var loading=document.getElementById('loading'), error=document.getElementById('error'), app=document.getElementById('app');
+  if(loading)loading.style.display='none';
+  if(error)error.style.display='none';
+  if(app)app.style.display='block';
+}
+function detectDelimiter(txt){
+  var line='',q=false;
+  for(var i=0;i<txt.length;i++){
+    var c=txt[i];
+    if(c==='"'&&txt[i+1]==='"'){i++;continue}
+    if(c==='"')q=!q;
+    if(!q&&(c==='\n'||c==='\r'))break;
+    line+=c;
+  }
+  function count(d){var n=0,qq=false;for(var j=0;j<line.length;j++){var ch=line[j];if(ch==='"'&&line[j+1]==='"'){j++;continue}if(ch==='"')qq=!qq;else if(!qq&&ch===d)n++;}return n}
+  var comma=count(','), semi=count(';'), tab=count('\t');
+  return tab>comma&&tab>semi?'\t':(semi>comma?';':',');
+}
+function parseCSV(txt){
+  txt=String(txt||'').replace(/^\uFEFF/,'');
+  var delimiter=detectDelimiter(txt), rows=[], row=[], field='', q=false;
+  for(var i=0;i<txt.length;i++){
+    var c=txt[i];
+    if(q){
+      if(c==='"'){
+        if(txt[i+1]==='"'){field+='"';i++}else q=false;
+      }else field+=c;
+    }else{
+      if(c==='"')q=true;
+      else if(c===delimiter){row.push(field);field=''}
+      else if(c==='\n'){row.push(field);rows.push(row);row=[];field=''}
+      else if(c==='\r'){}
+      else field+=c;
+    }
+  }
+  if(field!==''||row.length){row.push(field);rows.push(row)}
+  return rows;
+}
+function numBR(v){
+  if(typeof v==='number')return v;
+  var s=String(v==null?'':v).trim();
+  if(!s)return '';
+  var raw=s.replace(/\s/g,'').replace(/%$/,'').replace(/^R\$/,'');
+  var hasComma=raw.indexOf(',')>=0, hasDot=raw.indexOf('.')>=0;
+  if(hasComma&&hasDot){
+    raw = raw.lastIndexOf(',')>raw.lastIndexOf('.') ? raw.replace(/\./g,'').replace(',', '.') : raw.replace(/,/g,'');
+  }else if(hasComma){
+    raw = raw.replace(',', '.');
+  }
+  var n=Number(raw);
+  return isNaN(n)?s:n;
+}
+function csvToObjects(txt){
+  var table=parseCSV(txt).filter(function(r){return r.some(function(c){return String(c||'').trim()!==''})});
+  if(!table.length)return [];
+  var headers=table.shift().map(function(h){return String(h||'').replace(/^\uFEFF/,'').trim().replace(/\s+/g,' ')});
+  var canonical={MES:'MES',SETOR:'SETOR',GARAGEM:'GARAGEM',MOTORISTA:'MOTORISTA',KM:'KM',PERFORMANCE:'PERFORMANCE',PONTUACAO:'PONTUACAO',PONTUACAO_TOTAL:'PONTUACAO',PONTOS:'PONTUACAO',FLUIG:'FLUIG'};
+  var numeric={KM:1,PERFORMANCE:1,PONTUACAO:1};
+  EV_COLS.forEach(function(e){numeric[nkey(e)]=1;(EV_ALIASES[e]||[]).forEach(function(a){numeric[nkey(a)]=1})});
+  return table.map(function(r){
+    var o={};
+    headers.forEach(function(h,i){
+      if(!h)return;
+      var val=r[i]==null?'':String(r[i]).trim();
+      var key=nkey(h);
+      var outKey=canonical[key]||h;
+      o[outKey]=(numeric[outKey]||numeric[h]||numeric[key])?numBR(val):val;
+    });
+    return o;
+  });
+}
+function loadSheet(){
+  var controller=null,timer=null;
+  if(typeof AbortController!=='undefined'){
+    controller=new AbortController();
+    timer=setTimeout(function(){try{controller.abort()}catch(e){}},25000);
+  }
+  fetch(SHEET_URL,{cache:'no-store',signal:controller?controller.signal:undefined})
+    .then(function(r){
+      if(timer)clearTimeout(timer);
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      return r.text();
+    })
+    .then(function(txt){
+      if(/^\s*</.test(txt))throw new Error('O link retornou HTML em vez de CSV. Confira se a planilha está publicada na web.');
+      var rows=csvToObjects(txt);
+      if(!rows.length)throw new Error('CSV carregou, mas não trouxe linhas de dados.');
+      initRows(rows);
+    })
+    .catch(function(e){
+      if(timer)clearTimeout(timer);
+      showErr('Não foi possível carregar a planilha publicada em CSV.<br><small>'+esc(e.message||e)+'</small>');
+    });
+}
+function initRows(rows){
   STATE.raw=rows;
   var qs=getSetor();
   STATE.setor=qs||'ALL';
   STATE.lockedSetor=!!(qs&&qs!=='ALL');
+  showApp();
   populateSectorSel();
-  applySetor();
-  document.getElementById('loading').style.display='none';
-  document.getElementById('app').style.display='block';
-  bindEvents();
+  try{
+    applySetor();
+    bindEvents();
+  }catch(e){
+    showErr('Os dados foram baixados, mas o dashboard encontrou erro ao processar.<br><small>'+esc(e.message||e)+'</small>');
+  }
 }
 function buildModel(rows){
   var monthly=STATE.months.map(function(m){
@@ -5179,12 +5272,23 @@ document.addEventListener('DOMContentLoaded',loadSheet);
   var road = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21 L10 3"/><path d="M20 21 L14 3"/><path d="M12 6 v2"/><path d="M12 11 v2"/><path d="M12 16 v2.5"/></svg>';
   // Performance: conta-giros refinado (arco + agulha + marcas + centro)
   var gauge = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16 A8 8 0 0 1 20 16"/><path d="M6.2 11.5 l1.2 .8"/><path d="M12 8.5 v1.3"/><path d="M17.8 11.5 l-1.2 .8"/><path d="M12 16 L16 11.2"/><circle cx="12" cy="16" r="1.3" fill="currentColor" stroke="none"/></svg>';
+  function setIconOnce(el, type, svg){
+    if(!el) return;
+    if(el.getAttribute('data-cc-icon-type') === type) return;
+    el.innerHTML = svg;
+    el.setAttribute('data-cc-icon-type', type);
+  }
   function apply(){
-    document.querySelectorAll('#heroSide1Card .hero-ico').forEach(function(el){el.innerHTML=road;});
-    document.querySelectorAll('.hero-main-stat .hero-ico').forEach(function(el){el.innerHTML=gauge;});
+    document.querySelectorAll('#heroSide1Card .hero-ico').forEach(function(el){setIconOnce(el,'road',road);});
+    document.querySelectorAll('.hero-main-stat .hero-ico').forEach(function(el){setIconOnce(el,'gauge',gauge);});
   }
   apply();
-  new MutationObserver(apply).observe(document.body,{subtree:true,childList:true});
+  var pending=false;
+  new MutationObserver(function(){
+    if(pending) return;
+    pending=true;
+    requestAnimationFrame(function(){pending=false;apply();});
+  }).observe(document.body,{subtree:true,childList:true});
 })();
 </script>
 </body>
